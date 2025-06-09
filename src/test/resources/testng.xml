@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="API Automation Test Suite" verbose="1">
+    <parameter name="environment" value="dev"/>
+    
+    <listeners>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+    
+    <test name="User API Tests" preserve-order="true">
+        <classes>
+            <class name="com.automation.tests.user.UserApiTests"/>
+        </classes>
+    </test>
+</suite>

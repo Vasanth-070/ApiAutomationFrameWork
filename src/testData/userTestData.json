@@ -1,0 +1,29 @@
+{
+  "getUserById": {
+    "userId": 2,
+    "expectedEmail": "janet.weaver@reqres.in",
+    "expectedFirstName": "Janet",
+    "expectedLastName": "Weaver"
+  },
+  "getUsersList": {
+    "page": 2,
+    "expectedPerPage": 6,
+    "expectedTotal": 12,
+    "expectedTotalPages": 2
+  },
+  "createUser": {
+    "name": "John Doe",
+    "job": "Software Engineer"
+  },
+  "updateUser": {
+    "userId": 2,
+    "name": "Jane Smith",
+    "job": "Senior Developer"
+  },
+  "deleteUser": {
+    "userId": 2
+  },
+  "userNotFound": {
+    "userId": 23
+  }
+}

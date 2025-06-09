@@ -20,4 +20,13 @@ public class ApiEndPoints {
 
     // Health Check
     public static final String HEALTH_CHECK = "/health";
+
+    // JSONPlaceholder API Endpoints
+    public static final String JSONPLACEHOLDER_POSTS = "/posts";
+    public static final String JSONPLACEHOLDER_POST_BY_ID = "/posts/{id}";
+    public static final String JSONPLACEHOLDER_USERS = "/users";
+    public static final String JSONPLACEHOLDER_USER_BY_ID = "/users/{id}";
+    public static final String JSONPLACEHOLDER_COMMENTS = "/comments";
+    public static final String JSONPLACEHOLDER_ALBUMS = "/albums";
+    public static final String JSONPLACEHOLDER_PHOTOS = "/photos";
 }

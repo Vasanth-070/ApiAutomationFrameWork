@@ -51,30 +51,28 @@ public class ApiLogger implements LoggingInterface {
 
     @Override
     public void logApiRequest(String method, String url, String payload) {
-        StringBuilder requestLog = new StringBuilder();
-        requestLog.append("\n").append("=".repeat(50));
-        requestLog.append("\nAPI REQUEST");
-        requestLog.append("\n").append("=".repeat(50));
-        requestLog.append("\nMethod: ").append(method);
-        requestLog.append("\nURL: ").append(url);
-        requestLog.append("\nPayload: ").append(payload != null ? payload : "No payload");
-        requestLog.append("\n").append("=".repeat(50));
+        String requestLog = "\n" + "=".repeat(50) +
+                "\nAPI REQUEST" +
+                "\n" + "=".repeat(50) +
+                "\nMethod: " + method +
+                "\nURL: " + url +
+                "\nPayload: " + (payload != null ? payload : "No payload") +
+                "\n" + "=".repeat(50);
 
-        logger.info(requestLog.toString());
+        logger.info(requestLog);
     }
 
     @Override
     public void logApiResponse(int statusCode, String responseBody, long responseTime) {
-        StringBuilder responseLog = new StringBuilder();
-        responseLog.append("\n").append("=".repeat(50));
-        responseLog.append("\nAPI RESPONSE");
-        responseLog.append("\n").append("=".repeat(50));
-        responseLog.append("\nStatus Code: ").append(statusCode);
-        responseLog.append("\nResponse Time: ").append(responseTime).append(" ms");
-        responseLog.append("\nResponse Body: ").append(responseBody != null ? responseBody : "No response body");
-        responseLog.append("\n").append("=".repeat(50));
+        String responseLog = "\n" + "=".repeat(50) +
+                "\nAPI RESPONSE" +
+                "\n" + "=".repeat(50) +
+                "\nStatus Code: " + statusCode +
+                "\nResponse Time: " + responseTime + " ms" +
+                "\nResponse Body: " + (responseBody != null ? responseBody : "No response body") +
+                "\n" + "=".repeat(50);
 
-        logger.info(responseLog.toString());
+        logger.info(responseLog);
     }
 
     @Override

@@ -8,7 +8,7 @@ import io.restassured.response.Response;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-public class AllureReportManager implements ReportingInterface {
+public class AllureReportingManager implements ReportingInterface {
 
     @Override
     public void initializeReport(String suiteName, String environment) {
@@ -44,8 +44,7 @@ public class AllureReportManager implements ReportingInterface {
     @Step("API Response received")
     public void logApiResponse(Response response, String responseBody) {
         Allure.addAttachment("Response Body", "application/json", responseBody, "json");
-        Allure.addAttachment("Response Headers", "text/plain",
-                new ByteArrayInputStream(response.getHeaders().toString().getBytes(StandardCharsets.UTF_8)));
+        Allure.addAttachment("Response Headers", response.getHeaders().toString());
         Allure.parameter("Status Code", response.getStatusCode());
         Allure.parameter("Response Time", response.getTime() + " ms");
     }

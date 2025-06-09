@@ -49,6 +49,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
         headers.put("Accept", "application/json");
+        headers.put("x-api-key", "reqres-free-v1");
         return headers;
     }
 

@@ -47,24 +47,22 @@ public class ExtentReportManager implements ReportingInterface {
 
     @Override
     public void logApiRequest(String method, String endpoint, String requestBody, String headers) {
-        StringBuilder requestDetails = new StringBuilder();
-        requestDetails.append("<b>Method:</b> ").append(method).append("<br>");
-        requestDetails.append("<b>Endpoint:</b> ").append(endpoint).append("<br>");
-        requestDetails.append("<b>Headers:</b> <pre>").append(headers).append("</pre><br>");
-        requestDetails.append("<b>Request Body:</b> <pre>").append(requestBody).append("</pre>");
+        String requestDetails = "<b>Method:</b> " + method + "<br>" +
+                "<b>Endpoint:</b> " + endpoint + "<br>" +
+                "<b>Headers:</b> <pre>" + headers + "</pre><br>" +
+                "<b>Request Body:</b> <pre>" + requestBody + "</pre>";
 
-        extentTest.info("API Request Details: " + requestDetails.toString());
+        extentTest.info("API Request Details: " + requestDetails);
     }
 
     @Override
     public void logApiResponse(Response response, String responseBody) {
-        StringBuilder responseDetails = new StringBuilder();
-        responseDetails.append("<b>Status Code:</b> ").append(response.getStatusCode()).append("<br>");
-        responseDetails.append("<b>Response Time:</b> ").append(response.getTime()).append(" ms<br>");
-        responseDetails.append("<b>Response Headers:</b> <pre>").append(response.getHeaders().toString()).append("</pre><br>");
-        responseDetails.append("<b>Response Body:</b> <pre>").append(responseBody).append("</pre>");
+        String responseDetails = "<b>Status Code:</b> " + response.getStatusCode() + "<br>" +
+                "<b>Response Time:</b> " + response.getTime() + " ms<br>" +
+                "<b>Response Headers:</b> <pre>" + response.getHeaders().toString() + "</pre><br>" +
+                "<b>Response Body:</b> <pre>" + responseBody + "</pre>";
 
-        extentTest.info("API Response Details: " + responseDetails.toString());
+        extentTest.info("API Response Details: " + responseDetails);
     }
 
     @Override

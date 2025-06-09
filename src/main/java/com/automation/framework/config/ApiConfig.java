@@ -1,7 +1,6 @@
 package com.automation.framework.config;
 
 import com.automation.framework.interfaces.ConfigInterface;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -19,11 +18,9 @@ public class ApiConfig implements ConfigInterface {
     public void loadConfig(String environment) {
         properties = new Properties();
         try {
-            String configFile = "src/main/resources/config/" + environment + ".properties";
-            FileInputStream fis = new FileInputStream(configFile);
-            properties.load(fis);
-            fis.close();
-        } catch (IOException e) {
+            String configFile = "/config/" + environment + ".properties";
+            properties.load(this.getClass().getResourceAsStream(configFile));
+        } catch (IOException | NullPointerException e) {
             throw new RuntimeException("Failed to load configuration for environment: " + environment, e);
         }
     }
