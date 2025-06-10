@@ -29,4 +29,7 @@ public class ApiEndPoints {
     public static final String JSONPLACEHOLDER_COMMENTS = "/comments";
     public static final String JSONPLACEHOLDER_ALBUMS = "/albums";
     public static final String JSONPLACEHOLDER_PHOTOS = "/photos";
+
+    // Ixigo Flight Booking API Endpoints
+    public static final String IXIGO_FLIGHT_TRIP_DETAILS = "/flight-booking-read/flight-trip/details/{tripId}";
 }

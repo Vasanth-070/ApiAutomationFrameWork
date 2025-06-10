@@ -19,7 +19,8 @@ public class ExtentReportManager implements ReportingInterface {
     @Override
     public void initializeReport(String suiteName, String environment) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-        reportPath = "reports/extent-reports/ExtentReport_" + timestamp + ".html";
+        String sanitizedSuiteName = suiteName.replaceAll("[^a-zA-Z0-9\\s]", "").replaceAll("\\s+", "_");
+        reportPath = "reports/extent-reports/ExtentReport_" + sanitizedSuiteName + "_" + timestamp + ".html";
 
         ExtentSparkReporter sparkReporter = new ExtentSparkReporter(reportPath);
         sparkReporter.config().setTheme(Theme.DARK);
