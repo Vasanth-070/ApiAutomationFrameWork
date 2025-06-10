@@ -214,8 +214,6 @@ public class UserApiTests extends BaseApiTest {
 
     @AfterClass
     public void tearDown() {
-        testLogger.logTestSuiteEnd("User API Test Suite", 4, 4, 0, 0);
-        reportManager.finalizeReport();
-        testLogger.logInfo("Test execution completed. Report generated at: " + reportManager.getReportPath());
+        baseTearDown("User API Test Suite", 4, 4, 0, 0);
     }
 }

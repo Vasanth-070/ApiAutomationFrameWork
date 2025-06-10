@@ -198,4 +198,13 @@ public abstract class BaseApiTest implements ApiTestInterface {
     protected interface ApiTestExecutor {
         void execute() throws Exception;
     }
+    
+    /**
+     * Common teardown for test suites
+     */
+    protected void baseTearDown(String suiteName, int totalTests, int passedTests, int failedTests, int skippedTests) {
+        testLogger.logTestSuiteEnd(suiteName, totalTests, passedTests, failedTests, skippedTests);
+        reportManager.finalizeReport();
+        testLogger.logInfo("Test execution completed. Report generated at: " + reportManager.getReportPath());
+    }
 }

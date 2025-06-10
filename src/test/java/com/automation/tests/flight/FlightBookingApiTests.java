@@ -110,18 +110,12 @@ public class FlightBookingApiTests extends BaseApiTest {
             reportManager.markTestPassed("testGetFlightTripDetails", "API call completed successfully");
             
         } catch (Exception e) {
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetFlightTripDetails", "FAILED", endTime - startTime);
-            testLogger.logError("Test failed with exception", e);
-            reportManager.markTestFailed("testGetFlightTripDetails", "Test failed: " + e.getMessage(), e);
-            throw new RuntimeException(e);
+            handleTestException("testGetFlightTripDetails", e, startTime);
         }
     }
     
     @AfterClass
     public void tearDown() {
-        testLogger.logTestSuiteEnd("Flight Booking API Test Suite", 1, 1, 0, 0);
-        reportManager.finalizeReport();
-        testLogger.logInfo("Test execution completed. Report generated at: " + reportManager.getReportPath());
+        baseTearDown("Flight Booking API Test Suite", 1, 1, 0, 0);
     }
 }
