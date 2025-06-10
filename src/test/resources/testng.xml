@@ -14,7 +14,7 @@
     
     <test name="Flight Service Tests" preserve-order="true">
         <classes>
-            <class name="com.automation.tests.services.flight.FlightBookingApiTests"/>
+            <class name="com.automation.tests.services.payment.FlightBookingApiTests"/>
         </classes>
     </test>
     

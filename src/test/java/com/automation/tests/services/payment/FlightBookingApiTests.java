@@ -1,7 +1,7 @@
-package com.automation.tests.services.flight;
+package com.automation.tests.services.payment;
 
 import com.automation.framework.core.base.BaseApiTest;
-import com.automation.framework.services.flight.endpoints.FlightEndpoints;
+import com.automation.framework.services.payment.endpoints.FlightEndpoints;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.annotations.AfterClass;

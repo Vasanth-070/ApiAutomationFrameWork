@@ -1,4 +1,4 @@
-package com.automation.framework.services.flight.endpoints;
+package com.automation.framework.services.payment.endpoints;
 
 public class FlightEndpoints {
     
