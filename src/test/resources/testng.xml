@@ -6,9 +6,36 @@
         <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
     </listeners>
     
-    <test name="User API Tests" preserve-order="true">
+    <test name="User Service Tests" preserve-order="true">
         <classes>
-            <class name="com.automation.tests.user.UserApiTests"/>
+            <class name="com.automation.tests.services.user.UserApiTests"/>
         </classes>
     </test>
+    
+    <test name="Flight Service Tests" preserve-order="true">
+        <classes>
+            <class name="com.automation.tests.services.flight.FlightBookingApiTests"/>
+        </classes>
+    </test>
+    
+    <!-- Future service tests can be added here -->
+    <!--
+    <test name="Payment Service Tests" preserve-order="true">
+        <classes>
+            <class name="com.automation.tests.services.payment.PaymentApiTests"/>
+        </classes>
+    </test>
+    
+    <test name="Onboarding Service Tests" preserve-order="true">
+        <classes>
+            <class name="com.automation.tests.services.onboarding.OnboardingApiTests"/>
+        </classes>
+    </test>
+    
+    <test name="Ticketing Service Tests" preserve-order="true">
+        <classes>
+            <class name="com.automation.tests.services.ticketing.TicketingApiTests"/>
+        </classes>
+    </test>
+    -->
 </suite>
