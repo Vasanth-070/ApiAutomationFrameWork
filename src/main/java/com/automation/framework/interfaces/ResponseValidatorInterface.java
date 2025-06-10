@@ -15,6 +15,11 @@ public interface ResponseValidatorInterface {
     void validateStatusCode(Response response, int expectedStatusCode);
     
     /**
+     * Validate HTTP status code is in array of acceptable status codes
+     */
+    void validateStatusCode(Response response, int[] expectedStatusCodes);
+    
+    /**
      * Validate a single response field
      */
     void validateResponseField(Response response, String key, Object expectedValue);

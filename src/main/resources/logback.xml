@@ -37,10 +37,6 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.automation.framework.logging.TestLogger" level="INFO" additivity="false">
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="STDOUT"/>
-    </logger>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

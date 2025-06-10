@@ -9,6 +9,11 @@ public interface ApiTestInterface {
      * Validate HTTP status code
      */
     void validateStatusCode(Response response, int expectedStatusCode);
+    
+    /**
+     * Validate HTTP status code is in array of acceptable status codes
+     */
+    void validateStatusCode(Response response, int[] expectedStatusCodes);
 
     /**
      * Validate response body content

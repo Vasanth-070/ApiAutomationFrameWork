@@ -17,6 +17,23 @@ public class ResponseValidator implements ResponseValidatorInterface {
                 "Status code validation failed. Expected: " + expectedStatusCode + 
                 ", Actual: " + response.getStatusCode());
     }
+    
+    @Override
+    public void validateStatusCode(Response response, int[] expectedStatusCodes) {
+        int actualStatusCode = response.getStatusCode();
+        boolean isValidStatusCode = false;
+        
+        for (int expectedStatusCode : expectedStatusCodes) {
+            if (actualStatusCode == expectedStatusCode) {
+                isValidStatusCode = true;
+                break;
+            }
+        }
+        
+        Assert.assertTrue(isValidStatusCode,
+                "Status code validation failed. Expected one of: " + java.util.Arrays.toString(expectedStatusCodes) + 
+                ", Actual: " + actualStatusCode);
+    }
 
     @Override
     public void validateResponseField(Response response, String key, Object expectedValue) {

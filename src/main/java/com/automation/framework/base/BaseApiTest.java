@@ -53,6 +53,11 @@ public abstract class BaseApiTest implements ApiTestInterface {
     public void validateStatusCode(Response response, int expectedStatusCode) {
         responseValidator.validateStatusCode(response, expectedStatusCode);
     }
+    
+    @Override
+    public void validateStatusCode(Response response, int[] expectedStatusCodes) {
+        responseValidator.validateStatusCode(response, expectedStatusCodes);
+    }
 
     @Override
     public void validateResponse(Response response, String expectedKey, Object expectedValue) {
