@@ -11,7 +11,7 @@ import org.testng.annotations.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FlightBookingApiTests extends BaseApiTest {
+public class PaymentPageApiTests extends BaseApiTest {
 
     @BeforeClass
     @Override
