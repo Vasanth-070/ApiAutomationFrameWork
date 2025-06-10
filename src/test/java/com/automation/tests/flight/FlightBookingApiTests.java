@@ -2,10 +2,6 @@ package com.automation.tests.flight;
 
 import com.automation.framework.base.BaseApiTest;
 import com.automation.framework.data.ApiEndPoints;
-import com.automation.framework.factory.LoggerFactory;
-import com.automation.framework.factory.ReportManagerFactory;
-import com.automation.framework.interfaces.LoggingInterface;
-import com.automation.framework.interfaces.ReportingInterface;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.annotations.AfterClass;
@@ -17,15 +13,9 @@ import java.util.Map;
 
 public class FlightBookingApiTests extends BaseApiTest {
 
-    private LoggingInterface testLogger;
-    private ReportingInterface reportManager;
-
     @BeforeClass
     @Override
     public void baseSetup() {
-        testLogger = LoggerFactory.createLogger();
-        reportManager = ReportManagerFactory.createReportManager();
-        
         super.baseSetup();
         
         reportManager.initializeReport("Flight Booking API Tests", apiConfig.getEnvironment());

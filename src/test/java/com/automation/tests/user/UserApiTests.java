@@ -1,14 +1,7 @@
 package com.automation.tests.user;
 
 import com.automation.framework.base.BaseApiTest;
-import com.automation.framework.factory.DataProviderFactory;
-import com.automation.framework.factory.LoggerFactory;
-import com.automation.framework.factory.ReportManagerFactory;
-import com.automation.framework.interfaces.DataProviderInterface;
-import com.automation.framework.interfaces.LoggingInterface;
-import com.automation.framework.interfaces.ReportingInterface;
 import com.automation.framework.models.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.Assert;
@@ -17,19 +10,9 @@ import java.util.Map;
 
 public class UserApiTests extends BaseApiTest {
 
-    private DataProviderInterface testDataProvider;
-    private LoggingInterface testLogger;
-    private ReportingInterface reportManager;
-    private ObjectMapper objectMapper;
-
     @BeforeClass
     @Override
     public void baseSetup() {
-        testDataProvider = DataProviderFactory.createDataProvider();
-        testLogger = LoggerFactory.createLogger();
-        reportManager = ReportManagerFactory.createReportManager();
-        objectMapper = new ObjectMapper();
-        
         super.baseSetup();
         
         reportManager.initializeReport("User API Tests", apiConfig.getEnvironment());
@@ -46,24 +29,20 @@ public class UserApiTests extends BaseApiTest {
 
     @Test(priority = 1, description = "Get list of users")
     public void testGetUsersList() {
-        reportManager.startTest("Get Users List", "Verify that users list API returns correct data");
-        testLogger.logTestStart("testGetUsersList", "UserApiTests");
-        long startTime = System.currentTimeMillis();
-        
-        try {
+        executeApiTest("Get Users List", "Verify that users list API returns correct data", 
+                      "testGetUsersList", "UserApiTests", () -> {
+            
             Map<String, Object> testData = testDataProvider.getTestDataForCase("getUsersList");
             int page = (Integer) testData.get("page");
             
-            testLogger.logApiRequest("GET", "/users?page=" + page, null);
-            reportManager.logApiRequest("GET", "/users?page=" + page, null, getApiHeaders().toString());
+            logApiRequest("GET", "/users?page=" + page, null, getApiHeaders());
             
             Response response = RestAssured.given()
                     .headers(getApiHeaders())
                     .when()
                     .get("/users?page=" + page);
             
-            testLogger.logApiResponse(response.getStatusCode(), response.getBody().asString(), response.getTime());
-            reportManager.logApiResponse(response, response.getBody().asString());
+            logApiResponse(response);
             
             // Validate status code
             validateStatusCode(response, 200);
@@ -86,70 +65,51 @@ public class UserApiTests extends BaseApiTest {
             Assert.assertNotNull(usersResponse.getData());
             Assert.assertFalse(usersResponse.getData().isEmpty());
             testLogger.logAssertionPassed("Users data is present and not empty");
-            
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetUsersList", "PASSED", endTime - startTime);
-            reportManager.markTestPassed("testGetUsersList", "All validations passed successfully");
-            
-        } catch (Exception e) {
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetUsersList", "FAILED", endTime - startTime);
-            testLogger.logError("Test failed with exception", e);
-            reportManager.markTestFailed("testGetUsersList", "Test failed: " + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     @Test(priority = 2, description = "Get single user by ID")
     public void testGetUserById() {
-        reportManager.startTest("Get User By ID", "Verify that single user API returns correct user data");
-        testLogger.logTestStart("testGetUserById", "UserApiTests");
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            Map<String, Object> testData = testDataProvider.getTestDataForCase("getUserById");
-            int userId = (Integer) testData.get("userId");
+        executeApiTestWithManualExceptionHandling("Get User By ID", "Verify that single user API returns correct user data",
+                                                 "testGetUserById", "UserApiTests", () -> {
+            long startTime = System.currentTimeMillis();
             
-            testLogger.logApiRequest("GET", "/users/" + userId, null);
-            reportManager.logApiRequest("GET", "/users/" + userId, null, getApiHeaders().toString());
-            
-            Response response = RestAssured.given()
-                    .headers(getApiHeaders())
-                    .when()
-                    .get("/users/" + userId);
-            
-            testLogger.logApiResponse(response.getStatusCode(), response.getBody().asString(), response.getTime());
-            reportManager.logApiResponse(response, response.getBody().asString());
-            
-            // Validate status code
-            validateStatusCode(response, 200);
-            testLogger.logAssertionPassed("Status code is 200");
-            
-            // Parse response
-            UserResponse userResponse = objectMapper.readValue(response.getBody().asString(), UserResponse.class);
-            
-            // Validate user data
-            Assert.assertEquals(userResponse.getData().getId(), userId);
-            testLogger.logAssertionPassed("User ID matches expected value");
-            
-            Assert.assertEquals(userResponse.getData().getEmail(), testData.get("expectedEmail"));
-            testLogger.logAssertionPassed("Email matches expected value");
-            
-            Assert.assertEquals(userResponse.getData().getFirstName(), testData.get("expectedFirstName"));
-            testLogger.logAssertionPassed("First name matches expected value");
-            
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetUserById", "PASSED", endTime - startTime);
-            reportManager.markTestPassed("testGetUserById", "User data validation successful");
-            
-        } catch (Exception e) {
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetUserById", "FAILED", endTime - startTime);
-            testLogger.logError("Test failed with exception", e);
-            reportManager.markTestFailed("testGetUserById", "Test failed: " + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            try {
+                Map<String, Object> testData = testDataProvider.getTestDataForCase("getUserById");
+                int userId = (Integer) testData.get("userId");
+                
+                logApiRequest("GET", "/users/" + userId, null, getApiHeaders());
+                
+                Response response = RestAssured.given()
+                        .headers(getApiHeaders())
+                        .when()
+                        .get("/users/" + userId);
+                
+                logApiResponse(response);
+                
+                // Validate status code
+                validateStatusCode(response, 200);
+                testLogger.logAssertionPassed("Status code is 200");
+                
+                // Parse response
+                UserResponse userResponse = objectMapper.readValue(response.getBody().asString(), UserResponse.class);
+                
+                // Validate user data
+                Assert.assertEquals(userResponse.getData().getId(), userId);
+                testLogger.logAssertionPassed("User ID matches expected value");
+                
+                Assert.assertEquals(userResponse.getData().getEmail(), testData.get("expectedEmail"));
+                testLogger.logAssertionPassed("Email matches expected value");
+                
+                Assert.assertEquals(userResponse.getData().getFirstName(), testData.get("expectedFirstName"));
+                testLogger.logAssertionPassed("First name matches expected value");
+                
+                endTestPassed("testGetUserById", "User data validation successful", startTime);
+                
+            } catch (Exception e) {
+                handleTestException("testGetUserById", e, startTime);
+            }
+        });
     }
 
     @Test(priority = 3, description = "Create new user")
