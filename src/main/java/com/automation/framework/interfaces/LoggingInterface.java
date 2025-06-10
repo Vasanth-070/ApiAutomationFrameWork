@@ -53,4 +53,19 @@ public interface LoggingInterface {
      * Configure logging level
      */
     void setLoggingLevel(String level);
+    
+    /**
+     * Log test suite start
+     */
+    void logTestSuiteStart(String suiteName);
+    
+    /**
+     * Log test suite end
+     */
+    void logTestSuiteEnd(String suiteName, int totalTests, int passedTests, int failedTests, int skippedTests);
+    
+    /**
+     * Log assertion passed
+     */
+    void logAssertionPassed(String assertionMessage);
 }

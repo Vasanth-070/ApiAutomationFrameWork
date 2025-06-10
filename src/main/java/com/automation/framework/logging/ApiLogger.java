@@ -95,6 +95,25 @@ public class ApiLogger implements LoggingInterface {
                 (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(loggerName);
         logbackLogger.setLevel(Level.valueOf(level.toUpperCase()));
     }
+    
+    @Override
+    public void logTestSuiteStart(String suiteName) {
+        logger.info("🚀 Starting Test Suite: " + suiteName);
+    }
+    
+    @Override
+    public void logTestSuiteEnd(String suiteName, int totalTests, int passedTests, int failedTests, int skippedTests) {
+        logger.info(String.format("🏁 Test Suite Completed: %s", suiteName));
+        logger.info(String.format("📊 Total Tests: %d", totalTests));
+        logger.info(String.format("✅ Passed: %d", passedTests));
+        logger.info(String.format("❌ Failed: %d", failedTests));
+        logger.info(String.format("⏭️ Skipped: %d", skippedTests));
+    }
+    
+    @Override
+    public void logAssertionPassed(String assertionMessage) {
+        logger.info("✅ Assertion Passed: " + assertionMessage);
+    }
 
     private String getStatusEmoji(String status) {
         switch (status.toUpperCase()) {

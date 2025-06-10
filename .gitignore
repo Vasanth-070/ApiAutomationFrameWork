@@ -8,6 +8,8 @@ target/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/encodings.xml
+.idea/misc.xml
 *.iws
 *.iml
 *.ipr
@@ -36,3 +38,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Claude Code ###
+.claude/
+CLAUDE.md

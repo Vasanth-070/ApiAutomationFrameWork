@@ -1,10 +1,13 @@
 package com.automation.tests.user;
 
 import com.automation.framework.base.BaseApiTest;
-import com.automation.framework.data.TestDataProvider;
-import com.automation.framework.logging.TestLogger;
+import com.automation.framework.factory.DataProviderFactory;
+import com.automation.framework.factory.LoggerFactory;
+import com.automation.framework.factory.ReportManagerFactory;
+import com.automation.framework.interfaces.DataProviderInterface;
+import com.automation.framework.interfaces.LoggingInterface;
+import com.automation.framework.interfaces.ReportingInterface;
 import com.automation.framework.models.*;
-import com.automation.framework.reporting.ExtentReportManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -14,17 +17,17 @@ import java.util.Map;
 
 public class UserApiTests extends BaseApiTest {
 
-    private TestDataProvider testDataProvider;
-    private TestLogger testLogger;
-    private ExtentReportManager reportManager;
+    private DataProviderInterface testDataProvider;
+    private LoggingInterface testLogger;
+    private ReportingInterface reportManager;
     private ObjectMapper objectMapper;
 
     @BeforeClass
     @Override
     public void baseSetup() {
-        testDataProvider = new TestDataProvider();
-        testLogger = TestLogger.getInstance();
-        reportManager = new ExtentReportManager();
+        testDataProvider = DataProviderFactory.createDataProvider();
+        testLogger = LoggerFactory.createLogger();
+        reportManager = ReportManagerFactory.createReportManager();
         objectMapper = new ObjectMapper();
         
         super.baseSetup();
