@@ -42,7 +42,31 @@ public class ExtentReportManager implements ReportingInterface {
 
     @Override
     public void logStep(String stepDescription, String status) {
-        Status extentStatus = Status.valueOf(status.toUpperCase());
+        Status extentStatus;
+        switch (status.toLowerCase()) {
+            case "pass":
+            case "passed":
+                extentStatus = Status.PASS;
+                break;
+            case "fail":
+            case "failed":
+                extentStatus = Status.FAIL;
+                break;
+            case "skip":
+            case "skipped":
+                extentStatus = Status.SKIP;
+                break;
+            case "info":
+            case "information":
+                extentStatus = Status.INFO;
+                break;
+            case "warning":
+            case "warn":
+                extentStatus = Status.WARNING;
+                break;
+            default:
+                extentStatus = Status.INFO;
+        }
         extentTest.log(extentStatus, stepDescription);
     }
 

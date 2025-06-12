@@ -2,6 +2,7 @@ package com.automation.tests.services.payment;
 
 import com.automation.framework.core.base.BaseApiTest;
 import com.automation.framework.services.payment.endpoints.FlightEndpoints;
+import com.automation.framework.shared.utils.HttpMethod;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.annotations.AfterClass;
@@ -9,109 +10,128 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PaymentPageApiTests extends BaseApiTest {
+
+    // Test Constants - to avoid string literals
+    private static final String TEST_NAME = "Flight Booking API Tests";
+    private static final String TEST_SUITE_NAME = "Flight Booking API Test Suite";
+    private static final String TEST_METHOD_NAME = "Ixigo Flight Trip Details";
+    private static final String TEST_DESCRIPTION = "Test Ixigo Flight Trip Details API call with authentication";
+    private static final String TEST_DATA_SETUP_MESSAGE = "Setting up test data for Flight Booking API tests";
+    private static final String TEST_DATA_CLEANUP_MESSAGE = "Cleaning up test data for Flight Booking API tests";
+    private static final String TRIP_ID = "01JXG6YG1JPTJKEWS3PK9VQWAWYJ11XG6G0";
+    private static final String UPI_DATA_STRUCTURE_VALIDATION = "UPI data structure";
+    private static final String UPI_OPTIONS_VALIDATION = "UPI options";
+    private static final String UPI_HEADING_EMPTY_ERROR = "UPI heading should not be empty";
+    private static final String UPI_OPTIONS_EMPTY_ERROR = "UPI options should not be empty";
+    private static final String UPI_HEADING_PATH = "data.upi.heading";
+    private static final String UPI_OPTIONS_PATH = "data.upi.options";
+    private static final String[] REQUIRED_FIELDS = {"name", "paymentMethod", "paymentReference", "txnType"};
+
 
     @BeforeClass
     @Override
     public void baseSetup() {
         super.baseSetup();
-        
-        reportManager.initializeReport("Flight Booking API Tests", apiConfig.getEnvironment());
-        testLogger.logTestSuiteStart("Flight Booking API Test Suite");
+
+        reportManager.initializeReport(TEST_NAME, apiConfig.getEnvironment());
+        testLogger.logTestSuiteStart(TEST_SUITE_NAME);
     }
 
     @Override
     public void setupTestData() {
-        testLogger.logInfo("Setting up test data for Flight Booking API tests");
+        testLogger.logInfo(TEST_DATA_SETUP_MESSAGE);
     }
 
     @Override
     public void cleanupTestData() {
-        testLogger.logInfo("Cleaning up test data for Flight Booking API tests");
+        testLogger.logInfo(TEST_DATA_CLEANUP_MESSAGE);
     }
 
-    private Map<String, String> getIxigoHeaders() {
+    /**
+     * Get monitoring headers (optional for this API)
+     * BaseApiTest automatically handles all authentication headers
+     */
+    private Map<String, String> getMonitoringHeaders() {
         Map<String, String> headers = new HashMap<>();
         
-        // Authentication headers - read from properties
-        headers.put("apikey", apiConfig.getProperty("ixigo.apikey"));
-        headers.put("authorization", "Bearer " + apiConfig.getProperty("ixigo.auth.token"));
-        headers.put("clientid", apiConfig.getProperty("ixigo.clientid"));
-        headers.put("deviceid", apiConfig.getProperty("ixigo.deviceid"));
+        // Optional monitoring headers
+        String baggage = apiConfig.getProperty("api.baggage");
+        if (baggage != null) {
+            headers.put("baggage", baggage);
+        }
         
-        // Standard headers - read from properties
-        headers.put("accept", apiConfig.getProperty("ixigo.accept"));
-        headers.put("accept-language", apiConfig.getProperty("ixigo.accept.language"));
-        headers.put("timezone", apiConfig.getProperty("ixigo.timezone"));
-        headers.put("x-request-webappversion", apiConfig.getProperty("ixigo.webapp.version"));
-        headers.put("psdkuiversion", apiConfig.getProperty("ixigo.psdk.ui.version"));
-        headers.put("ixisrc", apiConfig.getProperty("ixigo.ixisrc"));
-        headers.put("priority", apiConfig.getProperty("ixigo.priority"));
-        headers.put("sec-fetch-mode", apiConfig.getProperty("ixigo.sec.fetch.mode"));
-        headers.put("sec-fetch-site", apiConfig.getProperty("ixigo.sec.fetch.site"));
-        headers.put("user-agent", apiConfig.getProperty("ixigo.user.agent"));
-        headers.put("x-requested-with", apiConfig.getProperty("ixigo.x.requested.with"));
-        
-        // Sentry headers - read from properties
-        headers.put("baggage", apiConfig.getProperty("ixigo.baggage"));
-        headers.put("sentry-trace", apiConfig.getProperty("ixigo.sentry.trace"));
-        
-        // Referer header - read from properties
-        headers.put("referer", apiConfig.getProperty("ixigo.referer"));
-        
-        // Cookie header - read from properties (update in dev.properties when needed)
-        headers.put("Cookie", apiConfig.getProperty("ixigo.cookies"));
+        String sentryTrace = apiConfig.getProperty("api.sentry.trace");
+        if (sentryTrace != null) {
+            headers.put("sentry-trace", sentryTrace);
+        }
         
         return headers;
     }
 
-    @Test(description = "Test Ixigo Flight Trip Details API call with exact curl headers")
+    @Test(description = TEST_DESCRIPTION)
     public void testGetFlightTripDetails() {
-        reportManager.startTest("Ixigo Flight Trip Details", "Test Ixigo Flight Trip Details API call with authentication");
-        testLogger.logTestStart("testGetFlightTripDetails", "FlightBookingApiTests");
+        executeTest(TEST_METHOD_NAME, TEST_DESCRIPTION, () -> {
+            String tripId = TRIP_ID;
+            String endpoint = FlightEndpoints.Payment_init.replace("{transactionId}", tripId);
+            
+            // BaseApiTest automatically adds auth headers, we only need monitoring headers
+            Response response = makeApiCall(HttpMethod.GET, endpoint, getMonitoringHeaders(), null);
+            
+            validateWithLogging(UPI_DATA_STRUCTURE_VALIDATION, () -> validateUpiDataStructure(response));
+            validateWithLogging(UPI_OPTIONS_VALIDATION, () -> validateUpiOptions(response));
+        });
+    }
+
+    /**
+     * Validate UPI data - heading should not be empty
+     * @param response - API response containing UPI data
+     */
+    private void validateUpiDataStructure(Response response) {
+        String upiHeading = response.jsonPath().getString(UPI_HEADING_PATH);
         
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            String tripId = "IF25061094872927";
-            String endpoint = FlightEndpoints.IXIGO_FLIGHT_TRIP_DETAILS.replace("{tripId}", tripId) + "?tripFetchFlow=PAYMENT_CONFIRMATION";
-            
-            testLogger.logApiRequest("GET", endpoint, null);
-            reportManager.logApiRequest("GET", endpoint, null, getIxigoHeaders().toString());
-            
-            String fullUrl = apiConfig.getBaseUrl() + FlightEndpoints.IXIGO_FLIGHT_TRIP_DETAILS.replace("{tripId}", tripId) + "?tripFetchFlow=PAYMENT_CONFIRMATION";
-            testLogger.logInfo("Full Request URL: " + fullUrl);
-            testLogger.logInfo("Request Headers: " + getIxigoHeaders().toString());
-            
-            Response response = RestAssured.given()
-                    .headers(getIxigoHeaders())
-                    .when()
-                    .get(FlightEndpoints.IXIGO_FLIGHT_TRIP_DETAILS.replace("{tripId}", tripId) + "?tripFetchFlow=PAYMENT_CONFIRMATION")
-                    .then()
-                    .extract()
-                    .response();
-            
-            testLogger.logApiResponse(response.getStatusCode(), response.getBody().asString(), response.getTime());
-            reportManager.logApiResponse(response, response.getBody().asString());
-            
-            testLogger.logInfo("Response Status Code: " + response.getStatusCode());
-            testLogger.logInfo("Response Time: " + response.getTime() + " ms");
-            testLogger.logInfo("Response Headers: " + response.getHeaders().toString());
-            testLogger.logInfo("Response Body: " + response.asString());
-            
-            long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd("testGetFlightTripDetails", "COMPLETED", endTime - startTime);
-            reportManager.markTestPassed("testGetFlightTripDetails", "API call completed successfully");
-            
-        } catch (Exception e) {
-            handleTestException("testGetFlightTripDetails", e, startTime);
+        if (upiHeading == null || upiHeading.trim().isEmpty()) {
+            throwAssertionError(UPI_HEADING_EMPTY_ERROR);
         }
     }
-    
+
+    /**
+     * Validate UPI options array and required fields
+     * @param response - API response containing UPI data
+     */
+    private void validateUpiOptions(Response response) {
+        List<Object> upiOptions = response.jsonPath().getList(UPI_OPTIONS_PATH);
+        
+        if (upiOptions == null || upiOptions.isEmpty()) {
+            throwAssertionError(UPI_OPTIONS_EMPTY_ERROR);
+        }
+        
+        for (int i = 0; i < upiOptions.size(); i++) {
+            validateUpiOptionRequiredFields(response, i);
+        }
+    }
+
+    /**
+     * Validate required fields for each UPI option
+     * @param response - API response
+     * @param index - index of the option to validate
+     */
+    private void validateUpiOptionRequiredFields(Response response, int index) {
+        String basePath = "data.upi.options[" + index + "]";
+        
+        for (String field : REQUIRED_FIELDS) {
+            String value = response.jsonPath().getString(basePath + "." + field);
+            if (value == null || value.trim().isEmpty()) {
+                throwAssertionError("UPI option " + index + " should have non-empty " + field);
+            }
+        }
+    }
+
     @AfterClass
     public void tearDown() {
-        baseTearDown("Flight Booking API Test Suite", 1, 1, 0, 0);
+        baseTearDown(TEST_SUITE_NAME);
     }
 }
