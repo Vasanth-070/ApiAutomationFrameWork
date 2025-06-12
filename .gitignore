@@ -39,6 +39,12 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### Reports and Results ###
+reports/
+allure-results/
+test-output/
+logs/
+
 ### Claude Code ###
 .claude/
 CLAUDE.md
