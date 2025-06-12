@@ -20,26 +20,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Abstract base class for API tests that enforces framework architecture patterns.
+ * Abstract base class that ENFORCES API test architecture patterns through Template Method pattern.
  * 
  * ARCHITECTURAL ENFORCEMENT:
- * - Forces proper test lifecycle management
- * - Ensures consistent test structure and metadata
- * - Prevents bypass of framework functionality
- * - Provides template methods for guided test creation
+ * - FORCES proper test lifecycle management through final methods
+ * - ENSURES consistent test structure and metadata via abstract methods
+ * - PREVENTS bypass of framework functionality with final core methods
+ * - PROVIDES template methods for guided test creation
  * 
- * REQUIRED IMPLEMENTATIONS:
- * - getTestSuiteName(): Provide test suite name
- * - getTestEnvironment(): Specify test environment  
- * - performTestSetup(): Test-specific setup logic
- * - performTestCleanup(): Test-specific cleanup logic
- * - defineTestCases(): Define all test cases using test() method
+ * REQUIRED IMPLEMENTATIONS (ABSTRACT METHODS):
+ * - getTestSuiteName(): Provide test suite name for reporting
+ * - defineTestCases(): Define all test cases using executeTest() wrapper
  * 
- * USAGE PATTERN:
- * Use test() method wrapper for all test cases
- * Use apiCall() for HTTP requests  
- * Use validate() for assertions
- * Use fail() for test failures
+ * USAGE PATTERN (ENFORCED):
+ * - Use executeTest() wrapper for ALL test methods (cannot be bypassed)
+ * - Use makeApiCall() for HTTP requests (framework handles auth/logging)
+ * - Use validateWithLogging() for assertions (framework handles reporting)
+ * - Use performTestSetup()/performTestCleanup() for test-specific logic
+ * 
+ * FRAMEWORK GUARANTEE:
+ * - All tests follow consistent patterns
+ * - All API calls are logged and authenticated
+ * - All validations are reported
+ * - Test lifecycle is properly managed
  */
 public abstract class BaseApiTest implements ApiTestInterface {
 
@@ -117,32 +120,74 @@ public abstract class BaseApiTest implements ApiTestInterface {
     private int passedTests = 0;
     private int failedTests = 0;
     private int skippedTests = 0;
+    
+    // ==================== ABSTRACT METHODS (ENFORCED IMPLEMENTATION) ====================
+    
+    /**
+     * REQUIRED: Must return test suite name for reporting and logging.
+     * Used in report generation and log file naming.
+     */
+    public abstract String getTestSuiteName();
+    
+    
+    /**
+     * REQUIRED: Must define all test cases using executeTest() wrapper pattern.
+     * This method is called during test initialization to register test cases.
+     * 
+     * Example implementation:
+     * <pre>
+     * &#64;Override
+     * public void defineTestCases() {
+     *     // Test cases will be defined as TestNG methods
+     *     // This method serves as documentation of the test structure
+     * }
+     * </pre>
+     */
+    public abstract void defineTestCases();
 
+    /**
+     * FINAL - Framework-controlled setup that cannot be overridden.
+     * Ensures consistent initialization across all test classes.
+     * Uses Template Method pattern to call abstract methods.
+     */
     @BeforeClass
-    public void baseSetup() {
+    public final void baseSetup() {
         // Initialize core dependencies
         apiConfig = new ApiConfig();
+        
         responseValidator = ResponseValidatorFactory.createValidator();
         testDataProvider = DataProviderFactory.createDataProvider();
         testLogger = LoggerFactory.createLogger();
         reportManager = ReportManagerFactory.createReportManager();
         objectMapper = new ObjectMapper();
         
-        // Configure RestAssured
+        // Configure RestAssured with base URL from config
         RestAssured.baseURI = apiConfig.getBaseUrl();
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         
-        setupTestData();
+        // Initialize report with enforced test suite name
+        reportManager.initializeReport(getTestSuiteName(), apiConfig.getEnvironment());
+        testLogger.logTestSuiteStart(getTestSuiteName());
+        
+        // Call test-specific setup hook
+        performTestSetup();
+        
+        // Register test cases (enforced implementation)
+        defineTestCases();
     }
 
+    /**
+     * FINAL - Framework-controlled teardown that cannot be overridden.
+     * Ensures consistent cleanup across all test classes.
+     */
     @AfterClass
-    public void baseTeardown() {
-        cleanupTestData();
+    public final void baseTeardown() {
+        // Call test-specific cleanup hook
+        performTestCleanup();
+        
+        // Framework-controlled teardown with enforced test suite name
+        baseTearDown(getTestSuiteName());
     }
-
-    // ==================== REMOVED INTERFACE IMPLEMENTATIONS ====================
-    // Simplified interface - removed unused legacy validation and header methods
-    // Core functionality now uses executeTest() + makeApiCall() + validateWithLogging() pattern
     
     /**
      * Internal method to build headers with authentication
@@ -201,14 +246,24 @@ public abstract class BaseApiTest implements ApiTestInterface {
         return headers;
     }
 
+    // ==================== FRAMEWORK HOOK METHODS (OVERRIDE FOR CUSTOM LOGIC) ====================
+    
+    /**
+     * Override to add test-specific setup logic.
+     * Called by framework during baseSetup() lifecycle.
+     */
     @Override
-    public void setupTestData() {
-        // Default implementation - can be overridden by test classes
+    public void performTestSetup() {
+        // Default empty implementation - override as needed
     }
-
+    
+    /**
+     * Override to add test-specific cleanup logic.
+     * Called by framework during baseTeardown() lifecycle.
+     */
     @Override
-    public void cleanupTestData() {
-        // Default implementation - can be overridden by test classes
+    public void performTestCleanup() {
+        // Default empty implementation - override as needed
     }
     
     
@@ -229,18 +284,18 @@ public abstract class BaseApiTest implements ApiTestInterface {
     }
     
     /**
-     * Main test execution wrapper that handles entire test lifecycle
+     * FINAL - Main test execution wrapper that handles entire test lifecycle.
+     * CANNOT BE OVERRIDDEN - Ensures all tests follow framework patterns.
      * @param testName - name of the test for reporting
      * @param description - test description
      * @param executor - test execution logic
      */
-    protected void executeTest(String testName, String description, ApiTestExecutor executor) {
+    protected final void executeTest(String testName, String description, ApiTestExecutor executor) {
         totalTests++;
         reportManager.startTest(testName, description);
         
-        String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
         String className = this.getClass().getSimpleName();
-        testLogger.logTestStart(methodName, className);
+        testLogger.logTestStart(testName, className);
         
         long startTime = System.currentTimeMillis();
         
@@ -248,34 +303,34 @@ public abstract class BaseApiTest implements ApiTestInterface {
             executor.execute();
             passedTests++;
             long endTime = System.currentTimeMillis();
-            testLogger.logTestEnd(methodName, STATUS_COMPLETED, endTime - startTime);
-            reportManager.markTestPassed(methodName, MSG_TEST_COMPLETED_SUCCESS);
+            testLogger.logTestEnd(testName, STATUS_COMPLETED, endTime - startTime);
+            reportManager.markTestPassed(testName, MSG_TEST_COMPLETED_SUCCESS);
         } catch (AssertionError e) {
             // Test assertions failed - let TestNG handle these naturally
-            logTestFailure(methodName, e, startTime);
+            logTestFailure(testName, e, startTime);
             throw e;
         } catch (RuntimeException e) {
             // Runtime exceptions - pass through without wrapping
-            logTestFailure(methodName, e, startTime);
+            logTestFailure(testName, e, startTime);
             throw e;
         } catch (Exception e) {
             // Checked exceptions - log and convert to AssertionError for test framework
-            logTestFailure(methodName, e, startTime);
+            logTestFailure(testName, e, startTime);
             throw new AssertionError(ERROR_TEST_FAILED_UNEXPECTED + e.getMessage(), e);
         }
     }
     
     /**
      * Private helper method to handle test failure logging and reporting
-     * @param methodName - name of the test method
+     * @param testName - name of the test
      * @param exception - the exception that caused the failure
      * @param startTime - test start time for duration calculation
      */
-    private void logTestFailure(String methodName, Throwable exception, long startTime) {
+    private void logTestFailure(String testName, Throwable exception, long startTime) {
         long endTime = System.currentTimeMillis();
-        testLogger.logTestEnd(methodName, STATUS_FAILED, endTime - startTime);
+        testLogger.logTestEnd(testName, STATUS_FAILED, endTime - startTime);
         testLogger.logError(MSG_TEST_FAILED_EXCEPTION, exception);
-        reportManager.markTestFailed(methodName, MSG_TEST_FAILED_PREFIX + exception.getMessage(), exception);
+        reportManager.markTestFailed(testName, MSG_TEST_FAILED_PREFIX + exception.getMessage(), exception);
     }
     
     /**
@@ -291,15 +346,16 @@ public abstract class BaseApiTest implements ApiTestInterface {
     }
     
     /**
-     * API call wrapper that handles logging and RestAssured calls
-     * Automatically adds auth headers to provided test-specific headers
+     * FINAL - API call wrapper that handles logging and RestAssured calls.
+     * CANNOT BE OVERRIDDEN - Ensures all API calls are authenticated and logged.
+     * Automatically adds auth headers to provided test-specific headers.
      * @param method - HTTP method enum (HttpMethod.GET, HttpMethod.POST, etc.)
      * @param endpoint - API endpoint
      * @param testSpecificHeaders - test-specific headers (can be null or empty)
      * @param body - request body (can be null)
      * @return Response object
      */
-    protected Response makeApiCall(HttpMethod method, String endpoint, Map<String, String> testSpecificHeaders, String body) {
+    protected final Response makeApiCall(HttpMethod method, String endpoint, Map<String, String> testSpecificHeaders, String body) {
         return makeApiCall(method, endpoint, testSpecificHeaders, body, true, 200);
     }
     
@@ -391,11 +447,12 @@ public abstract class BaseApiTest implements ApiTestInterface {
     }
     
     /**
-     * Validation wrapper that handles logging and reporting
+     * FINAL - Validation wrapper that handles logging and reporting.
+     * CANNOT BE OVERRIDDEN - Ensures all validations are logged and reported.
      * @param validationName - name of validation for logging
      * @param validator - validation logic
      */
-    protected void validateWithLogging(String validationName, ValidationExecutor validator) {
+    protected final void validateWithLogging(String validationName, ValidationExecutor validator) {
         testLogger.logInfo(MSG_VALIDATING_PREFIX + validationName + MSG_VALIDATING_SUFFIX);
         try {
             validator.validate();
@@ -443,18 +500,18 @@ public abstract class BaseApiTest implements ApiTestInterface {
     // ==================== CONVENIENCE METHODS ====================
     
     /**
-     * API call with no test-specific headers (most common case)
-     * Auth headers are automatically added by BaseApiTest
+     * FINAL - API call with no test-specific headers (most common case).
+     * Auth headers are automatically added by BaseApiTest.
      */
-    protected Response makeApiCall(HttpMethod method, String endpoint) {
+    protected final Response makeApiCall(HttpMethod method, String endpoint) {
         return makeApiCall(method, endpoint, null, null);
     }
     
     /**
-     * API call with body but no test-specific headers
-     * Auth headers are automatically added by BaseApiTest
+     * FINAL - API call with body but no test-specific headers.
+     * Auth headers are automatically added by BaseApiTest.
      */
-    protected Response makeApiCall(HttpMethod method, String endpoint, String body) {
+    protected final Response makeApiCall(HttpMethod method, String endpoint, String body) {
         return makeApiCall(method, endpoint, null, body);
     }
     
