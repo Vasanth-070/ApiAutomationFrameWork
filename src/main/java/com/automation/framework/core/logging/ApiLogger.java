@@ -27,66 +27,64 @@ public class ApiLogger implements LoggingInterface {
 
     @Override
     public void logInfo(String message) {
-        logger.info(message);
+        logger.info("ℹ️ [FRAMEWORK] " + message);
     }
 
     @Override
     public void logDebug(String message) {
-        logger.debug(message);
+        logger.debug("🔍 [DEBUG] " + message);
     }
 
     @Override
     public void logWarning(String message) {
-        logger.warn(message);
+        logger.warn("⚠️ [WARNING] " + message);
     }
 
     @Override
     public void logError(String message, Throwable exception) {
+        String formattedMessage = "❌ [ERROR] " + message;
         if (exception != null) {
-            logger.error(message, exception);
+            logger.error(formattedMessage, exception);
         } else {
-            logger.error(message);
+            logger.error(formattedMessage);
         }
     }
 
     @Override
     public void logApiRequest(String method, String url, String payload) {
-        String requestLog = "\n" + "=".repeat(50) +
-                "\nAPI REQUEST" +
-                "\n" + "=".repeat(50) +
-                "\nMethod: " + method +
-                "\nURL: " + url +
-                "\nPayload: " + (payload != null ? payload : "No payload") +
-                "\n" + "=".repeat(50);
+        String requestLog = "\n" + "═".repeat(25) + " API REQUEST " + "═".repeat(25) +
+                "\n▶ [METHOD] " + method +
+                "\n🌐 [URL] " + url +
+                "\n📄 [PAYLOAD] " + (payload != null ? payload : "No payload") +
+                "\n" + "─".repeat(65) + "\n";
 
         logger.info(requestLog);
     }
 
     @Override
     public void logApiResponse(int statusCode, String responseBody, long responseTime) {
-        String responseLog = "\n" + "=".repeat(50) +
-                "\nAPI RESPONSE" +
-                "\n" + "=".repeat(50) +
-                "\nStatus Code: " + statusCode +
-                "\nResponse Time: " + responseTime + " ms" +
-                "\nResponse Body: " + (responseBody != null ? responseBody : "No response body") +
-                "\n" + "=".repeat(50);
+        String statusEmoji = getStatusCodeEmoji(statusCode);
+        String responseLog = "\n" + "═".repeat(25) + " API RESPONSE " + "═".repeat(24) +
+                "\n" + statusEmoji + " [STATUS] " + statusCode +
+                "\n⏱ [TIME] " + responseTime + " ms" +
+                "\n📄 [RESPONSE] " + (responseBody != null ? responseBody : "No response body") +
+                "\n" + "─".repeat(65) + "\n";
 
         logger.info(responseLog);
     }
 
     @Override
     public void logTestStart(String testName, String testClass) {
-        String message = String.format("Starting test: %s in class: %s", testName, testClass);
-        logger.info("▶️ " + message);
+        String message = String.format("\n▶ [TEST-START] %s in class: %s", testName, testClass);
+        logger.info(message);
     }
 
     @Override
     public void logTestEnd(String testName, String status, long executionTime) {
         String emoji = getStatusEmoji(status);
-        String message = String.format("Test completed: %s | Status: %s | Duration: %d ms",
-                testName, status, executionTime);
-        logger.info(emoji + " " + message);
+        String message = String.format("\n◀ [TEST-END] %s | Status: %s | Duration: %d ms %s\n",
+                testName, status, executionTime, emoji);
+        logger.info(message);
     }
 
     @Override
@@ -98,33 +96,51 @@ public class ApiLogger implements LoggingInterface {
     
     @Override
     public void logTestSuiteStart(String suiteName) {
-        logger.info("🚀 Starting Test Suite: " + suiteName);
+        String message = "\n" + "═".repeat(30) + "\n▶ [SUITE-START] Test Suite: " + suiteName + "\n" + "═".repeat(30);
+        logger.info(message);
     }
     
     @Override
     public void logTestSuiteEnd(String suiteName, int totalTests, int passedTests, int failedTests, int skippedTests) {
-        logger.info(String.format("🏁 Test Suite Completed: %s", suiteName));
-        logger.info(String.format("📊 Total Tests: %d", totalTests));
-        logger.info(String.format("✅ Passed: %d", passedTests));
-        logger.info(String.format("❌ Failed: %d", failedTests));
-        logger.info(String.format("⏭️ Skipped: %d", skippedTests));
+        String message = "\n" + "═".repeat(30) + 
+                "\n◀ [SUITE-END] Test Suite Completed: " + suiteName +
+                "\n▣ [SUMMARY] Total Tests: " + totalTests +
+                "\n✓ [PASSED] " + passedTests +
+                "\n✗ [FAILED] " + failedTests +
+                "\n⊘ [SKIPPED] " + skippedTests +
+                "\n" + "═".repeat(30);
+        logger.info(message);
     }
     
     @Override
     public void logAssertionPassed(String assertionMessage) {
-        logger.info("✅ Assertion Passed: " + assertionMessage);
+        logger.info("✓ [ASSERTION] Passed: " + assertionMessage);
     }
 
     private String getStatusEmoji(String status) {
         switch (status.toUpperCase()) {
             case "PASSED":
-                return "✅";
+                return "✓";
             case "FAILED":
-                return "❌";
+                return "✗";
             case "SKIPPED":
-                return "⏭️";
+                return "⊘";
             default:
-                return "ℹ️";
+                return "ℹ";
+        }
+    }
+    
+    private String getStatusCodeEmoji(int statusCode) {
+        if (statusCode >= 200 && statusCode < 300) {
+            return "✓"; // Success
+        } else if (statusCode >= 300 && statusCode < 400) {
+            return "↻"; // Redirect
+        } else if (statusCode >= 400 && statusCode < 500) {
+            return "⚠"; // Client Error
+        } else if (statusCode >= 500) {
+            return "✗"; // Server Error
+        } else {
+            return "ℹ"; // Unknown
         }
     }
 }
