@@ -105,6 +105,6 @@ public class PaymentResponseValidator {
      */
     private static boolean isValidTxnType(String txnType) {
         return txnType != null && 
-               List.of("COLLECT", "INTENT", "QR", "PUSH").contains(txnType.toUpperCase());
+               List.of("UPI_COLLECT", "UPI_PAY").contains(txnType.toUpperCase());
     }
 }

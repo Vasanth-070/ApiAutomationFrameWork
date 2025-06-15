@@ -10,6 +10,8 @@ import com.automation.framework.core.factory.DataProviderFactory;
 import com.automation.framework.core.factory.LoggerFactory;
 import com.automation.framework.core.factory.ReportManagerFactory;
 import com.automation.framework.core.factory.ResponseValidatorFactory;
+import com.automation.framework.core.auth.SessionAuthenticationManager;
+import com.automation.framework.core.auth.HeaderManager;
 import com.automation.framework.shared.utils.HttpMethod;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
@@ -110,10 +112,13 @@ public abstract class BaseApiTest implements ApiTestInterface {
 
     protected ApiConfig apiConfig;
     protected ResponseValidatorInterface responseValidator;
+    // will be used by child classes
     protected DataProviderInterface testDataProvider;
     protected LoggingInterface testLogger;
     protected ReportingInterface reportManager;
     protected ObjectMapper objectMapper;
+    protected SessionAuthenticationManager sessionAuthManager;
+    protected HeaderManager headerManager;
     
     // Test counters for dynamic reporting
     private int totalTests = 0;
@@ -161,6 +166,12 @@ public abstract class BaseApiTest implements ApiTestInterface {
         reportManager = ReportManagerFactory.createReportManager();
         objectMapper = new ObjectMapper();
         
+        // Initialize session-based authentication manager
+        sessionAuthManager = SessionAuthenticationManager.getInstance();
+        
+        // Initialize header manager
+        headerManager = new HeaderManager();
+        
         // Configure RestAssured with base URL from config
         RestAssured.baseURI = apiConfig.getBaseUrl();
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
@@ -188,63 +199,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
         // Framework-controlled teardown with enforced test suite name
         baseTearDown(getTestSuiteName());
     }
-    
-    /**
-     * Internal method to build headers with authentication
-     */
-    private Map<String, String> buildApiHeaders(String token) {
-        Map<String, String> headers = new HashMap<>();
-        
-        // Standard HTTP headers
-        headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);
-        headers.put(HEADER_ACCEPT, apiConfig.getProperty(PROP_API_ACCEPT, CONTENT_TYPE_JSON));
-        headers.put(HEADER_ACCEPT_LANGUAGE, apiConfig.getProperty(PROP_API_ACCEPT_LANGUAGE, DEFAULT_ACCEPT_LANGUAGE));
-        headers.put(HEADER_USER_AGENT, apiConfig.getProperty(PROP_API_USER_AGENT, DEFAULT_USER_AGENT));
-        
-        // Application-specific headers
-        String timezone = apiConfig.getProperty(PROP_API_TIMEZONE);
-        if (timezone != null) {
-            headers.put(HEADER_TIMEZONE, timezone);
-        }
-        
-        // Authentication headers
-        String apiKey = apiConfig.getProperty(PROP_API_KEY);
-        if (apiKey != null) {
-            headers.put(HEADER_API_KEY, apiKey);
-        }
-        
-        if (token != null) {
-            headers.put(HEADER_AUTHORIZATION, BEARER_PREFIX + token);
-        }
-        
-        String clientId = apiConfig.getProperty(PROP_API_CLIENT_ID);
-        if (clientId != null) {
-            headers.put(HEADER_CLIENT_ID, clientId);
-        }
-        
-        String deviceId = apiConfig.getProperty(PROP_API_DEVICE_ID);
-        if (deviceId != null) {
-            headers.put(HEADER_DEVICE_ID, deviceId);
-        }
-        
-        // App version headers
-        String appVersion = apiConfig.getProperty(PROP_API_APP_VERSION);
-        if (appVersion != null) {
-            headers.put(HEADER_WEBAPP_VERSION, appVersion);
-        }
-        
-        String sdkVersion = apiConfig.getProperty(PROP_API_SDK_VERSION);
-        if (sdkVersion != null) {
-            headers.put(HEADER_SDK_VERSION, sdkVersion);
-        }
-        
-        String ixiSrc = apiConfig.getProperty(PROP_API_IXI_SRC);
-        if (ixiSrc != null) {
-            headers.put(HEADER_IXI_SRC, ixiSrc);
-        }
-        
-        return headers;
-    }
+
 
     // ==================== FRAMEWORK HOOK METHODS (OVERRIDE FOR CUSTOM LOGIC) ====================
     
@@ -371,14 +326,8 @@ public abstract class BaseApiTest implements ApiTestInterface {
      * @return Response object
      */
     private Response makeApiCall(HttpMethod method, String endpoint, Map<String, String> testSpecificHeaders, String body, boolean validateStatus, int... expectedStatusCodes) {
-        // Start with authenticated headers
-        String token = apiConfig.getProperty(PROP_API_AUTH_TOKEN);
-        
-        Map<String, String> finalHeaders = buildApiHeaders(token);
-        if (testSpecificHeaders != null) {
-            finalHeaders.putAll(testSpecificHeaders);
-        }
-        
+        // Build headers with session-based authentication
+        Map<String, String> finalHeaders = headerManager.buildApiHeaders(apiConfig, testSpecificHeaders);
         testLogger.logApiRequest(method.getValue(), endpoint, body);
         reportManager.logApiRequest(method.getValue(), endpoint, body, finalHeaders.toString());
         
@@ -497,6 +446,46 @@ public abstract class BaseApiTest implements ApiTestInterface {
     protected void baseTearDown(String suiteName) {
         baseTearDown(suiteName, this.totalTests, this.passedTests, this.failedTests, this.skippedTests);
     }
+    
+    // ==================== AUTHENTICATION MANAGEMENT METHODS ====================
+    
+    /**
+     * Force re-authentication for current session
+     * Useful when token expires or authentication issues occur
+     */
+    protected final void forceReauthentication() {
+        try {
+            String newToken = sessionAuthManager.forceReauthentication("default_session");
+            testLogger.logInfo("Successfully re-authenticated. New token available.");
+        } catch (Exception e) {
+            testLogger.logError("Failed to re-authenticate", e);
+            throw new RuntimeException("Re-authentication failed: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Check if current session has valid authentication
+     */
+    protected final boolean hasValidAuthentication() {
+        return sessionAuthManager.hasValidSession("default_session");
+    }
+    
+    /**
+     * Get current session authentication data
+     */
+    protected final SessionAuthenticationManager.SessionAuthData getSessionAuthData() {
+        return sessionAuthManager.getSessionData("default_session");
+    }
+    
+    /**
+     * Clear session authentication cache
+     * Useful for testing different authentication scenarios
+     */
+    protected final void clearAuthenticationCache() {
+        sessionAuthManager.clearSessionCache();
+        testLogger.logInfo("Authentication cache cleared");
+    }
+    
     // ==================== CONVENIENCE METHODS ====================
     
     /**
