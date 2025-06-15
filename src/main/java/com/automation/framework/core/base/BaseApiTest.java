@@ -18,7 +18,6 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterClass;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -356,10 +355,22 @@ public abstract class BaseApiTest implements ApiTestInterface {
         
         // Validate status code if requested
         if (validateStatus) {
-            if (expectedStatusCodes.length == 1) {
-                responseValidator.validateStatusCode(response, expectedStatusCodes[0]);
-            } else {
-                responseValidator.validateStatusCode(response, expectedStatusCodes);
+            try {
+                if (expectedStatusCodes.length == 1) {
+                    responseValidator.validateStatusCode(response, expectedStatusCodes[0]);
+                } else {
+                    responseValidator.validateStatusCode(response, expectedStatusCodes);
+                }
+            } catch (AssertionError e) {
+                // Log full API response only when status code validation fails
+                testLogger.logApiResponse(response.getStatusCode(), response.asString(), response.getTime());
+                reportManager.logApiResponse(response, response.asString());
+                throw e; // Re-throw the assertion error
+            } catch (Exception e) {
+                // Log full API response for other validation exceptions
+                testLogger.logApiResponse(response.getStatusCode(), response.asString(), response.getTime());
+                reportManager.logApiResponse(response, response.asString());
+                throw e; // Re-throw the validation exception
             }
         }
         

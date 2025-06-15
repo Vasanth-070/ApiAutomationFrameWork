@@ -146,12 +146,19 @@ public class AuthenticationManager {
         Map<String, String> formParams = new HashMap<>();
         String token = "";
         
-        if (loginId.contains("@")) {
+        if (loginId.contains("@") && loginId.contains(".com")) {
             formParams.put("grant_type", "emotp");
             token = Base64.getEncoder().encodeToString((loginId + "~" + otp.trim()).getBytes());
         } else {
             formParams.put("grant_type", "photp");
             token = Base64.getEncoder().encodeToString((loginId + "~" + "+91" + "~" + otp.trim()).getBytes());
+        }
+        
+        // Set grant_type again (following the working implementation pattern)
+        if (loginId.contains("@") || loginId.contains(".com")) {
+            formParams.put("grant_type", "emotp");
+        } else {
+            formParams.put("grant_type", "photp");
         }
         
         formParams.put("token", token);
@@ -170,6 +177,7 @@ public class AuthenticationManager {
         
         // Execute request
         Response response = RestAssured.given()
+                .contentType("application/x-www-form-urlencoded")
                 .spec(requestSpec)
                 .post(apiPath);
                 

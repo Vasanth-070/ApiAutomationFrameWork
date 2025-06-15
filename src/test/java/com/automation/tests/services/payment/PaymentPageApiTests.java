@@ -20,7 +20,7 @@ public class PaymentPageApiTests extends BaseApiTest {
     private static final String TEST_DESCRIPTION = "Comprehensive validation of Payment Init API with schema, business rules, and performance checks";
     private static final String TEST_DATA_SETUP_MESSAGE = "Setting up test data for Payment API tests";
     private static final String TEST_DATA_CLEANUP_MESSAGE = "Cleaning up test data for Payment API tests";
-    private static final String TRIP_ID = "01JXJK5NTTC36KDMC27R0GNMGYTJ0KX15JN";
+    private static final String TRIP_ID = "01JXT2C7G3NX5TJAYQTQPA688F2GJ701CXT";
     
     // Validation test names
     private static final String UPI_BUSINESS_RULES_VALIDATION = "UPI business rules validation";
