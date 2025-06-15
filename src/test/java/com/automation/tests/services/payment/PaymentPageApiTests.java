@@ -60,9 +60,9 @@ public class PaymentPageApiTests extends BaseApiTest {
 
         // Optional monitoring headers
         String baggage = apiConfig.getProperty("api.baggage");
-//        if (baggage != null) {
-//            headers.put("baggage", baggage);
-//        }
+       if (baggage != null) {
+           headers.put("baggage", baggage);
+       }
 
         String sentryTrace = apiConfig.getProperty("api.sentry.trace");
         if (sentryTrace != null) {

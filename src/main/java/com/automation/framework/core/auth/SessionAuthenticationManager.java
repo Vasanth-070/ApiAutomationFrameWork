@@ -154,7 +154,7 @@ public class SessionAuthenticationManager {
     /**
      * Get device ID from configuration or generate new one
      */
-    private String getDeviceId() {
+    public String getDeviceId() {
         String deviceId = apiConfig.getProperty(PROP_AUTH_USER_DEVICE_ID);
         
         if (deviceId == null || deviceId.trim().isEmpty() || "auto-generated".equals(deviceId)) {

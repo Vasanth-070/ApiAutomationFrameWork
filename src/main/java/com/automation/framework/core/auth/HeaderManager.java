@@ -162,12 +162,12 @@ public class HeaderManager {
         }
 
         // Client identification headers
-        String clientId = apiConfig.getProperty("api.client.id");
+        String clientId = apiConfig.getProperty("auth.user.clientid");
         if (clientId != null) {
             headers.put("clientid", clientId);
         }
 
-        String deviceId = apiConfig.getProperty("api.device.id");
+        String deviceId = SessionAuthenticationManager.getInstance().getDeviceId();
         if (deviceId != null) {
             headers.put("deviceid", deviceId);
         }
