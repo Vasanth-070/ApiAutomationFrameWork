@@ -26,11 +26,23 @@ public class RedisManager implements Closeable {
     private final ApiConfig apiConfig;
     
     /**
+     * Check if OTP mock is enabled in configuration
+     */
+    private boolean isMockOtpEnabled() {
+        return Boolean.parseBoolean(apiConfig.getProperty("auth.otp.mock", "false"));
+    }
+    
+    /**
      * Private constructor - use getInstance() to get the singleton instance
      */
     private RedisManager() {
         this.apiConfig = new ApiConfig();
-        initializeConnectionPool();
+        // Only initialize Redis if OTP mock is disabled
+        if (!isMockOtpEnabled()) {
+            initializeConnectionPool();
+        } else {
+            logger.info("Redis initialization skipped - OTP mock is enabled (auth.otp.mock=true)");
+        }
     }
     
     /**
@@ -86,6 +98,10 @@ public class RedisManager implements Closeable {
      */
     public Jedis getConnection() {
         if (jedisPool == null) {
+            if (isMockOtpEnabled()) {
+                logger.debug("Redis connection requested but mock OTP is enabled - Redis operations will be bypassed");
+                return null;
+            }
             throw new IllegalStateException("Redis connection pool not initialized");
         }
         return jedisPool.getResource();
@@ -116,11 +132,23 @@ public class RedisManager implements Closeable {
      * Get OTP from Redis by exact key
      */
     public String getOtpByKey(String redisKey) {
+        // Check if mock OTP is enabled
+        if (isMockOtpEnabled()) {
+            String mockOtp = apiConfig.getProperty("auth.otp.mock.value", "123456");
+            logger.debug("Using mock OTP instead of Redis - Key: {}, Mock OTP: {}", redisKey, mockOtp);
+            return mockOtp;
+        }
+        
         int database = Integer.parseInt(apiConfig.getProperty("redis.database", "0"));
         int extractStart = Integer.parseInt(apiConfig.getProperty("redis.otp.extract.start", "6"));
         int extractEnd = Integer.parseInt(apiConfig.getProperty("redis.otp.extract.end", "13"));
         
         try (Jedis connection = getConnection()) {
+            if (connection == null) {
+                logger.warn("Redis connection is null, returning null OTP");
+                return null;
+            }
+            
             selectDatabase(connection, database);
             
             String value = connection.get(redisKey);

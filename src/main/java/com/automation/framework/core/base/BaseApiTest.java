@@ -282,6 +282,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
      * @param startTime - test start time for duration calculation
      */
     private void logTestFailure(String testName, Throwable exception, long startTime) {
+        failedTests++;
         long endTime = System.currentTimeMillis();
         testLogger.logTestEnd(testName, STATUS_FAILED, endTime - startTime);
         testLogger.logError(MSG_TEST_FAILED_EXCEPTION, exception);
@@ -423,11 +424,10 @@ public abstract class BaseApiTest implements ApiTestInterface {
     }
     
     /**
-     * Throws assertion error with failure count increment
+     * Throws assertion error (failure count is handled at test level)
      * @param message - error message
      */
     protected void throwAssertionError(String message) {
-        failedTests++;
         throw new AssertionError(message);
     }
     
