@@ -3,19 +3,11 @@ package com.automation.framework.services.payment.validators;
 import com.automation.framework.services.payment.models.PaymentInitResponse;
 import com.automation.framework.services.payment.models.UpiData;
 import com.automation.framework.services.payment.models.UpiOption;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
 import io.restassured.response.Response;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Payment-specific response validator with business logic validation
