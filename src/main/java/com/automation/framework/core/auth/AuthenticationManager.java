@@ -24,7 +24,6 @@ import java.util.UUID;
  */
 public class AuthenticationManager {
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationManager.class);
-    private static final String API_KEY_SUFFIX = "!2$";
     
     private final String baseUrl;
     private final HeaderManager headerManager;
