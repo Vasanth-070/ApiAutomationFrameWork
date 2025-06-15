@@ -1,8 +1,8 @@
 package com.automation.framework.core.auth;
 
 import com.automation.framework.core.config.ApiConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.automation.framework.core.interfaces.LoggingInterface;
+import com.automation.framework.core.logging.ApiLogger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -18,7 +18,7 @@ import java.util.Set;
  * Follows the singleton pattern and integrates with the framework's configuration system
  */
 public class RedisManager implements Closeable {
-    private static final Logger logger = LoggerFactory.getLogger(RedisManager.class);
+    private static final LoggingInterface logger = new ApiLogger(RedisManager.class);
     private static RedisManager instance;
     private static final Object lock = new Object();
     
@@ -41,7 +41,7 @@ public class RedisManager implements Closeable {
         if (!isMockOtpEnabled()) {
             initializeConnectionPool();
         } else {
-            logger.info("Redis initialization skipped - OTP mock is enabled (auth.otp.mock=true)");
+            logger.logInfo("Redis initialization skipped - OTP mock is enabled (auth.otp.mock=true)");
         }
     }
     
@@ -83,13 +83,12 @@ public class RedisManager implements Closeable {
             // Test connection
             try (Jedis jedis = jedisPool.getResource()) {
                 String pong = jedis.ping();
-                logger.info("Redis connection established successfully. Response: {}", pong);
-                logger.info("Redis server info - Host: {}, Port: {}, Timeout: {}ms", redisHost, redisPort, timeout);
+                logger.logInfo("Redis connection established successfully. Response: " + pong);
+                logger.logInfo("Redis server info - Host: " + redisHost + ", Port: " + redisPort + ", Timeout: " + timeout + "ms");
             }
             
         } catch (Exception e) {
-            logger.warn("Failed to initialize Redis connection to {}:{} - Redis operations will fall back to mock values", redisHost, redisPort);
-            logger.warn("Redis error details: {}", e.getMessage());
+            logger.logError("Failed to initialize Redis connection to " + redisHost + ":" + redisPort + " - Redis operations will fall back to mock values",e);
             
             // Clean up failed connection pool
             if (jedisPool != null && !jedisPool.isClosed()) {
@@ -98,7 +97,7 @@ public class RedisManager implements Closeable {
             jedisPool = null;
             
             // Don't throw exception - allow graceful fallback to mock OTP
-            logger.info("Redis initialization failed but framework will continue with fallback mock OTP support");
+            logger.logInfo("Redis initialization failed but framework will continue with fallback mock OTP support");
         }
     }
     
@@ -108,9 +107,9 @@ public class RedisManager implements Closeable {
     public Jedis getConnection() {
         if (jedisPool == null) {
             if (isMockOtpEnabled()) {
-                logger.debug("Redis connection requested but mock OTP is enabled - Redis operations will be bypassed");
+                logger.logDebug("Redis connection requested but mock OTP is enabled - Redis operations will be bypassed");
             } else {
-                logger.debug("Redis connection requested but pool is not available - falling back to mock OTP");
+                logger.logDebug("Redis connection requested but pool is not available - falling back to mock OTP");
             }
             return null;
         }
@@ -123,7 +122,7 @@ public class RedisManager implements Closeable {
     public void selectDatabase(Jedis connection, int database) {
         if (connection != null) {
             connection.select(database);
-            logger.debug("Selected Redis database: {}", database);
+            logger.logDebug("Selected Redis database: " + database);
         }
     }
     
@@ -145,7 +144,7 @@ public class RedisManager implements Closeable {
         // Check if mock OTP is enabled
         if (isMockOtpEnabled()) {
             String mockOtp = apiConfig.getProperty("auth.otp.mock.value", "123456");
-            logger.debug("Using mock OTP instead of Redis - Key: {}, Mock OTP: {}", redisKey, mockOtp);
+            logger.logDebug("Using mock OTP instead of Redis - Key: " + redisKey + ", Mock OTP: " + mockOtp);
             return mockOtp;
         }
         
@@ -155,9 +154,9 @@ public class RedisManager implements Closeable {
         
         try (Jedis connection = getConnection()) {
             if (connection == null) {
-                logger.warn("Redis connection is null, falling back to mock OTP");
+                logger.logWarning("Redis connection is null, falling back to mock OTP");
                 String fallbackOtp = apiConfig.getProperty("auth.otp.mock.value", "123456");
-                logger.debug("Using fallback mock OTP: {}", fallbackOtp);
+                logger.logDebug("Using fallback mock OTP: " + fallbackOtp);
                 return fallbackOtp;
             }
             
@@ -166,18 +165,18 @@ public class RedisManager implements Closeable {
             String value = connection.get(redisKey);
             if (value != null && value.length() >= extractEnd) {
                 String otp = value.substring(extractStart, extractEnd);
-                logger.debug("Retrieved OTP from Redis - Key: {}, OTP: {}", redisKey, otp);
+                logger.logDebug("Retrieved OTP from Redis - Key: " + redisKey + ", OTP: " + otp);
                 return otp;
             } else {
-                logger.warn("OTP not found or invalid format in Redis for key: {}", redisKey);
+                logger.logWarning("OTP not found or invalid format in Redis for key: " + redisKey);
                 return null;
             }
             
         } catch (JedisException e) {
-            logger.error("Redis error while retrieving OTP for key: {}", redisKey, e);
+            logger.logError("Redis error while retrieving OTP for key: " + redisKey, e);
             return null;
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving OTP for key: {}", redisKey, e);
+            logger.logError("Unexpected error while retrieving OTP for key: " + redisKey, e);
             return null;
         }
     }
@@ -196,13 +195,13 @@ public class RedisManager implements Closeable {
         try (Jedis connection = getConnection()) {
             selectDatabase(connection, database);
             String value = connection.get(key);
-            logger.debug("Retrieved value from Redis - Key: {}, Database: {}", key, database);
+            logger.logDebug("Retrieved value from Redis - Key: " + key + ", Database: " + database);
             return value;
         } catch (JedisException e) {
-            logger.error("Redis error while retrieving value for key: {}", key, e);
+            logger.logError("Redis error while retrieving value for key: " + key, e);
             return null;
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving value for key: {}", key, e);
+            logger.logError("Unexpected error while retrieving value for key: " + key, e);
             return null;
         }
     }
@@ -222,13 +221,13 @@ public class RedisManager implements Closeable {
             selectDatabase(connection, database);
             String result = connection.set(key, value);
             boolean success = "OK".equals(result);
-            logger.debug("Set value in Redis - Key: {}, Database: {}, Success: {}", key, database, success);
+            logger.logDebug("Set value in Redis - Key: " + key + ", Database: " + database + ", Success: " + success);
             return success;
         } catch (JedisException e) {
-            logger.error("Redis error while setting value for key: {}", key, e);
+            logger.logError("Redis error while setting value for key: " + key, e);
             return false;
         } catch (Exception e) {
-            logger.error("Unexpected error while setting value for key: {}", key, e);
+            logger.logError("Unexpected error while setting value for key: " + key, e);
             return false;
         }
     }
@@ -248,13 +247,13 @@ public class RedisManager implements Closeable {
             selectDatabase(connection, database);
             Long result = connection.del(key);
             boolean success = result > 0;
-            logger.debug("Deleted key from Redis - Key: {}, Database: {}, Success: {}", key, database, success);
+            logger.logDebug("Deleted key from Redis - Key: " + key + ", Database: " + database + ", Success: " + success);
             return success;
         } catch (JedisException e) {
-            logger.error("Redis error while deleting key: {}", key, e);
+            logger.logError("Redis error while deleting key: " + key, e);
             return false;
         } catch (Exception e) {
-            logger.error("Unexpected error while deleting key: {}", key, e);
+            logger.logError("Unexpected error while deleting key: " + key, e);
             return false;
         }
     }
@@ -280,15 +279,15 @@ public class RedisManager implements Closeable {
             if (!keys.isEmpty()) {
                 String[] keyArray = keys.toArray(new String[0]);
                 Long deletedCount = connection.del(keyArray);
-                logger.info("Deleted {} OTP limit keys for loginId: {}", deletedCount, loginId);
+                logger.logInfo("Deleted " + deletedCount + " OTP limit keys for loginId: " + loginId);
             } else {
-                logger.debug("No OTP limit keys found for loginId: {}", loginId);
+                logger.logDebug("No OTP limit keys found for loginId: " + loginId);
             }
             
         } catch (JedisException e) {
-            logger.error("Redis error while deleting OTP limit keys for loginId: {}", loginId, e);
+            logger.logError("Redis error while deleting OTP limit keys for loginId: " + loginId, e);
         } catch (Exception e) {
-            logger.error("Unexpected error while deleting OTP limit keys for loginId: {}", loginId, e);
+            logger.logError("Unexpected error while deleting OTP limit keys for loginId: " + loginId, e);
         }
     }
     
@@ -308,15 +307,14 @@ public class RedisManager implements Closeable {
             
             String result = connection.hmset(key, hashValues);
             boolean success = "OK".equals(result);
-            logger.debug("Updated hash in Redis - Key: {}, Database: {}, Fields: {}, Success: {}", 
-                        key, database, hashValues.size(), success);
+            logger.logDebug("Updated hash in Redis - Key: " + key + ", Database: " + database + ", Fields: " + hashValues.size() + ", Success: " + success);
             return success;
             
         } catch (JedisException e) {
-            logger.error("Redis error while updating hash for key: {}", key, e);
+            logger.logError("Redis error while updating hash for key: " + key, e);
             return false;
         } catch (Exception e) {
-            logger.error("Unexpected error while updating hash for key: {}", key, e);
+            logger.logError("Unexpected error while updating hash for key: " + key, e);
             return false;
         }
     }
@@ -329,7 +327,7 @@ public class RedisManager implements Closeable {
             String pong = connection.ping();
             return "PONG".equals(pong);
         } catch (Exception e) {
-            logger.warn("Redis health check failed", e);
+            logger.logError("Redis health check failed",e);
             return false;
         }
     }
@@ -354,7 +352,7 @@ public class RedisManager implements Closeable {
     public void close() throws IOException {
         if (jedisPool != null && !jedisPool.isClosed()) {
             jedisPool.close();
-            logger.info("Redis connection pool closed");
+            logger.logInfo("Redis connection pool closed");
         }
     }
     
@@ -368,7 +366,7 @@ public class RedisManager implements Closeable {
                 try {
                     instance.close();
                 } catch (IOException e) {
-                    logger.warn("Error closing Redis manager during reset", e);
+                    logger.logError("Error closing Redis manager during reset",e);
                 }
                 instance = null;
             }

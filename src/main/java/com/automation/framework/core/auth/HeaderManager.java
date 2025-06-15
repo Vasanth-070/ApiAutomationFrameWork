@@ -1,8 +1,8 @@
 package com.automation.framework.core.auth;
 
 import com.automation.framework.core.config.ApiConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.automation.framework.core.interfaces.LoggingInterface;
+import com.automation.framework.core.logging.ApiLogger;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.util.UUID;
  * Handles both common headers and authentication-specific headers
  */
 public class HeaderManager {
-    private static final Logger logger = LoggerFactory.getLogger(HeaderManager.class);
+    private static final LoggingInterface logger = new ApiLogger(HeaderManager.class);
     private static final String API_KEY_SUFFIX = "!2$";
 
     /**
@@ -38,15 +38,15 @@ public class HeaderManager {
                     headers.put(entry.getKey().toString(), entry.getValue().toString());
                 }
 
-                logger.debug("Loaded {} common headers for client: {}", headers.size(), clientId);
+                logger.logDebug("Loaded " + headers.size() + " common headers for client: " + clientId);
             } catch (IOException e) {
-                logger.warn("Could not load headers from file: {}. Using default headers.", propertiesPath);
+                logger.logWarning("Could not load headers from file: " + propertiesPath + ". Using default headers.");
                 // Fall back to default headers
                 headers.putAll(getDefaultHeaders(clientId));
             }
 
         } catch (Exception e) {
-            logger.error("Error loading common headers for client: {}", clientId, e);
+            logger.logError("Error loading common headers for client: " + clientId, e);
             headers.putAll(getDefaultHeaders(clientId));
         }
 
@@ -79,7 +79,7 @@ public class HeaderManager {
         headers.put("uuid", deviceId);
         headers.put("X-Requested-With", "XMLHttpRequest");
 
-        logger.debug("Built OTP headers for client: {} with device: {}", clientId, deviceId);
+        logger.logDebug("Built OTP headers for client: " + clientId + " with device: " + deviceId);
         return headers;
     }
 
@@ -104,7 +104,7 @@ public class HeaderManager {
             headers.put("Accept-Language", "en");
         }
 
-        logger.debug("Built login headers for client: {} with device: {}", clientId, deviceId);
+        logger.logDebug("Built login headers for client: " + clientId + " with device: " + deviceId);
         return headers;
     }
 
@@ -142,14 +142,14 @@ public class HeaderManager {
         String authToken = null;
         try {
             authToken = SessionAuthenticationManager.getInstance().getSessionAuthToken();
-            logger.debug("Using session-based authentication token");
+            logger.logDebug("Using session-based authentication token");
         } catch (Exception e) {
-            logger.warn("Failed to get session auth token: " + e.getMessage());
+            logger.logWarning("Failed to get session auth token: " + e.getMessage());
             // Fallback to configured token
             String configuredToken = apiConfig.getProperty("api.auth.token");
             if (configuredToken != null && !configuredToken.trim().isEmpty()) {
                 authToken = "Bearer " + configuredToken;
-                logger.debug("Using configured authentication token");
+                logger.logDebug("Using configured authentication token");
             }
         }
 
@@ -193,7 +193,7 @@ public class HeaderManager {
             headers.putAll(testSpecificHeaders);
         }
 
-        logger.debug("Built complete API headers with {} total headers", headers.size());
+        logger.logDebug("Built complete API headers with " + headers.size() + " total headers");
         return headers;
     }
 

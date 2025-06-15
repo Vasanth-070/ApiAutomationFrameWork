@@ -1,7 +1,7 @@
 package com.automation.framework.core.auth;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.automation.framework.core.interfaces.LoggingInterface;
+import com.automation.framework.core.logging.ApiLogger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ import java.util.Map;
  * Thread-safe storage for parallel test execution
  */
 public class TokenStorage {
-    private static final Logger logger = LoggerFactory.getLogger(TokenStorage.class);
+    private static final LoggingInterface logger = new ApiLogger(TokenStorage.class);
     
     // Using ConcurrentHashMap for thread-safe operations
     private final Map<String, String> accessTokens = new ConcurrentHashMap<>();
@@ -26,7 +26,7 @@ public class TokenStorage {
      */
     public void storeToken(String userId, String accessToken, String cookie) {
         if (userId == null || userId.trim().isEmpty()) {
-            logger.warn("Cannot store token: userId is null or empty");
+            logger.logWarning("Cannot store token: userId is null or empty");
             return;
         }
         
@@ -36,12 +36,12 @@ public class TokenStorage {
         if (accessToken != null && !accessToken.trim().isEmpty()) {
             accessTokens.put(tokenKey, accessToken.trim());
             tokenTimestamps.put(tokenKey, System.currentTimeMillis());
-            logger.debug("Stored access token for user: {}", userId);
+            logger.logDebug("Stored access token for user: " + userId);
         }
         
         if (cookie != null && !cookie.trim().isEmpty()) {
             cookies.put(cookieKey, cookie.trim());
-            logger.debug("Stored cookie for user: {}", userId);
+            logger.logDebug("Stored cookie for user: " + userId);
         }
     }
     
@@ -50,7 +50,7 @@ public class TokenStorage {
      */
     public String getAuthHeader(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            logger.warn("Cannot get auth header: userId is null or empty");
+            logger.logWarning("Cannot get auth header: userId is null or empty");
             return null;
         }
         
@@ -58,13 +58,13 @@ public class TokenStorage {
         String accessToken = accessTokens.get(tokenKey);
         
         if (accessToken == null) {
-            logger.debug("No access token found for user: {}", userId);
+            logger.logDebug("No access token found for user: " + userId);
             return null;
         }
         
         // Check if token is expired
         if (isTokenExpired(tokenKey)) {
-            logger.warn("Access token expired for user: {}", userId);
+            logger.logWarning("Access token expired for user: " + userId);
             removeToken(userId);
             return null;
         }
@@ -77,7 +77,7 @@ public class TokenStorage {
      */
     public String getAccessToken(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            logger.warn("Cannot get access token: userId is null or empty");
+            logger.logWarning("Cannot get access token: userId is null or empty");
             return null;
         }
         
@@ -85,13 +85,13 @@ public class TokenStorage {
         String accessToken = accessTokens.get(tokenKey);
         
         if (accessToken == null) {
-            logger.debug("No access token found for user: {}", userId);
+            logger.logDebug("No access token found for user: " + userId);
             return null;
         }
         
         // Check if token is expired
         if (isTokenExpired(tokenKey)) {
-            logger.warn("Access token expired for user: {}", userId);
+            logger.logWarning("Access token expired for user: " + userId);
             removeToken(userId);
             return null;
         }
@@ -104,7 +104,7 @@ public class TokenStorage {
      */
     public String getCookie(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            logger.warn("Cannot get cookie: userId is null or empty");
+            logger.logWarning("Cannot get cookie: userId is null or empty");
             return null;
         }
         
@@ -112,7 +112,7 @@ public class TokenStorage {
         String cookie = cookies.get(cookieKey);
         
         if (cookie == null) {
-            logger.debug("No cookie found for user: {}", userId);
+            logger.logDebug("No cookie found for user: " + userId);
         }
         
         return cookie;
@@ -123,7 +123,7 @@ public class TokenStorage {
      */
     public void removeToken(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
-            logger.warn("Cannot remove token: userId is null or empty");
+            logger.logWarning("Cannot remove token: userId is null or empty");
             return;
         }
         
@@ -135,9 +135,9 @@ public class TokenStorage {
         boolean cookieRemoved = cookies.remove(cookieKey) != null;
         
         if (tokenRemoved || timestampRemoved || cookieRemoved) {
-            logger.debug("Removed authentication data for user: {}", userId);
+            logger.logDebug("Removed authentication data for user: " + userId);
         } else {
-            logger.debug("No authentication data found to remove for user: {}", userId);
+            logger.logDebug("No authentication data found to remove for user: " + userId);
         }
     }
     
@@ -177,7 +177,7 @@ public class TokenStorage {
         cookies.clear();
         tokenTimestamps.clear();
         
-        logger.info("Cleared {} access tokens and {} cookies from storage", tokenCount, cookieCount);
+        logger.logInfo("Cleared " + tokenCount + " access tokens and " + cookieCount + " cookies from storage");
     }
     
     /**
@@ -201,6 +201,6 @@ public class TokenStorage {
      */
     public void setTokenExpiryTime(long expiryTimeMs) {
         // This could be made configurable per instance if needed
-        logger.info("Token expiry time updated to: {} ms", expiryTimeMs);
+        logger.logInfo("Token expiry time updated to: " + expiryTimeMs + " ms");
     }
 }

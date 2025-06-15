@@ -7,8 +7,8 @@ import io.restassured.config.EncoderConfig;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.automation.framework.core.interfaces.LoggingInterface;
+import com.automation.framework.core.logging.ApiLogger;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -23,7 +23,7 @@ import java.util.UUID;
  * Based on the patterns from the original Cucumber API framework
  */
 public class AuthenticationManager {
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationManager.class);
+    private static final LoggingInterface logger = new ApiLogger(AuthenticationManager.class);
     
     private final String baseUrl;
     private final HeaderManager headerManager;
@@ -57,7 +57,7 @@ public class AuthenticationManager {
             // Step 1: Generate and get OTP (hybrid approach: API trigger + Redis retrieval)
             String otp = generateAndGetOtp(loginId, clientId, deviceId);
             if (otp == null || otp.trim().isEmpty()) {
-                logger.error("Failed to retrieve OTP for user: {}", loginId);
+                logger.logError("Failed to retrieve OTP for user: " + loginId, null);
                 return new AuthResponse(false, "Failed to retrieve OTP", null, null);
             }
             
@@ -70,16 +70,15 @@ public class AuthenticationManager {
                 // Store token for future use
                 tokenStorage.storeToken(loginId, accessToken, cookie);
                 
-                logger.info("Authentication successful for user: {}", loginId);
+                logger.logInfo("Authentication successful for user: " + loginId);
                 return new AuthResponse(true, "Authentication successful", accessToken, cookie);
             } else {
-                logger.error("Login failed. Status: {}, Response: {}", 
-                           loginResponse.getStatusCode(), loginResponse.asString());
+                logger.logError("Login failed. Status: " + loginResponse.getStatusCode() + ", Response: " + loginResponse.asString(), null);
                 return new AuthResponse(false, "Login failed", null, null);
             }
             
         } catch (Exception e) {
-            logger.error("Authentication error for user: {}", loginId, e);
+            logger.logError("Authentication error for user: " + loginId, e);
             return new AuthResponse(false, "Authentication error: " + e.getMessage(), null, null);
         }
     }
@@ -122,7 +121,7 @@ public class AuthenticationManager {
         builder.addFormParams(formParams);
         RequestSpecification requestSpec = builder.build();
         
-        logger.debug("Sending OTP to: {} using endpoint: {}", loginId, apiPath);
+        logger.logDebug("Sending OTP to: " + loginId + " using endpoint: " + apiPath);
         
         // Execute request
         Response response = RestAssured.given()
@@ -132,7 +131,7 @@ public class AuthenticationManager {
                 .spec(requestSpec)
                 .post(apiPath);
                 
-        logger.debug("OTP response: {}", response.asString());
+        logger.logDebug("OTP response: " + response.asString());
         return response;
     }
     
@@ -167,14 +166,14 @@ public class AuthenticationManager {
         builder.addFormParams(formParams);
         RequestSpecification requestSpec = builder.build();
         
-        logger.debug("Logging in user: {} with endpoint: {}", loginId, apiPath);
+        logger.logDebug("Logging in user: " + loginId + " with endpoint: " + apiPath);
         
         // Execute request
         Response response = RestAssured.given()
                 .spec(requestSpec)
                 .post(apiPath);
                 
-        logger.debug("Login response: {}", response.asString());
+        logger.logDebug("Login response: " + response.asString());
         return response;
     }
     
@@ -204,7 +203,7 @@ public class AuthenticationManager {
             message = loginId + "~" + "+91" + "~" + clientId + "~" + deviceId + "~" + deviceTime;
         }
         
-        logger.debug("SHA512 message: {}", message);
+        logger.logDebug("SHA512 message: " + message);
         
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -220,11 +219,11 @@ public class AuthenticationManager {
             }
             
             String token = hexString.toString();
-            logger.debug("Generated SHA512 token: {}", token);
+            logger.logDebug("Generated SHA512 token: " + token);
             return token;
             
         } catch (NoSuchAlgorithmException e) {
-            logger.error("SHA-512 algorithm not available", e);
+            logger.logError("SHA-512 algorithm not available", e);
             throw new RuntimeException("SHA-512 algorithm not available", e);
         }
     }
@@ -246,7 +245,7 @@ public class AuthenticationManager {
         
         if (useMockOtp) {
             String mockOtp = apiConfig.getProperty("auth.otp.mock.value", "123456");
-            logger.debug("Using mock OTP for testing: {} for loginId: {}", mockOtp, loginId);
+            logger.logDebug("Using mock OTP for testing: " + mockOtp + " for loginId: " + loginId);
             return mockOtp;
         }
         
@@ -254,18 +253,18 @@ public class AuthenticationManager {
         try {
             String otp = getRedisManager().getOtp(loginId);
             if (otp != null && !otp.trim().isEmpty()) {
-                logger.info("Retrieved OTP from Redis for loginId: {}", loginId);
+                logger.logInfo("Retrieved OTP from Redis for loginId: " + loginId);
                 return otp;
             } else {
-                logger.warn("OTP not found in Redis for loginId: {}, falling back to mock value", loginId);
+                logger.logWarning("OTP not found in Redis for loginId: " + loginId + ", falling back to mock value");
             }
         } catch (Exception e) {
-            logger.error("Error retrieving OTP from Redis for loginId: {}, falling back to mock value", loginId, e);
+            logger.logError("Error retrieving OTP from Redis for loginId: " + loginId + ", falling back to mock value", e);
         }
         
         // Fallback to mock OTP if Redis fails
         String fallbackOtp = apiConfig.getProperty("auth.otp.mock.value", "123456");
-        logger.warn("Using fallback mock OTP: {} for loginId: {}", fallbackOtp, loginId);
+        logger.logWarning("Using fallback mock OTP: " + fallbackOtp + " for loginId: " + loginId);
         return fallbackOtp;
     }
     
@@ -278,8 +277,7 @@ public class AuthenticationManager {
             // Step 1: Trigger OTP generation via API
             Response otpResponse = sendOtp(loginId, clientId, deviceId);
             if (otpResponse.getStatusCode() != 200) {
-                logger.error("Failed to trigger OTP generation. Status: {}, Response: {}", 
-                           otpResponse.getStatusCode(), otpResponse.asString());
+                logger.logError("Failed to trigger OTP generation. Status: " + otpResponse.getStatusCode() + ", Response: " + otpResponse.asString(), null);
                 return getOtp(loginId); // Fallback to Redis/mock
             }
             // Step 2: Wait a moment for Redis to be updated (backend processing)
@@ -287,11 +285,11 @@ public class AuthenticationManager {
             
             // Step 3: Retrieve OTP from Redis
             String otp = getOtp(loginId);
-            logger.info("Generated and retrieved OTP for loginId: {}", loginId);
+            logger.logInfo("Generated and retrieved OTP for loginId: " + loginId);
             return otp;
             
         } catch (Exception e) {
-            logger.error("Error in generateAndGetOtp for loginId: {}", loginId, e);
+            logger.logError("Error in generateAndGetOtp for loginId: " + loginId, e);
             return getOtp(loginId); // Fallback
         }
     }
@@ -302,9 +300,9 @@ public class AuthenticationManager {
     public void cleanupOtpLimits(String loginId) {
         try {
             getRedisManager().deleteOtpLimit(loginId);
-            logger.debug("Cleaned up OTP limit keys for loginId: {}", loginId);
+            logger.logDebug("Cleaned up OTP limit keys for loginId: " + loginId);
         } catch (Exception e) {
-            logger.warn("Error cleaning up OTP limits for loginId: {}", loginId, e);
+            logger.logWarning("Error cleaning up OTP limits for loginId: " + loginId);
         }
     }
     
@@ -315,7 +313,7 @@ public class AuthenticationManager {
         try {
             return redisManager.isHealthy();
         } catch (Exception e) {
-            logger.warn("Redis health check failed", e);
+            logger.logWarning("Redis health check failed");
             return false;
         }
     }
@@ -327,7 +325,7 @@ public class AuthenticationManager {
         try {
             return redisManager.getConnectionInfo();
         } catch (Exception e) {
-            logger.warn("Failed to get Redis connection info", e);
+            logger.logWarning("Failed to get Redis connection info");
             return "Redis connection info unavailable";
         }
     }
