@@ -455,7 +455,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
      */
     protected final void forceReauthentication() {
         try {
-            String newToken = sessionAuthManager.forceReauthentication("default_session");
+            sessionAuthManager.forceReauthentication("default_session");
             testLogger.logInfo("Successfully re-authenticated. New token available.");
         } catch (Exception e) {
             testLogger.logError("Failed to re-authenticate", e);

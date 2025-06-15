@@ -29,15 +29,25 @@ public class AuthenticationManager {
     private final String baseUrl;
     private final HeaderManager headerManager;
     private final TokenStorage tokenStorage;
-    private final RedisManager redisManager;
+    private RedisManager redisManager; // Lazy initialization
     private final ApiConfig apiConfig;
     
     public AuthenticationManager(String baseUrl) {
         this.baseUrl = baseUrl;
         this.headerManager = new HeaderManager();
         this.tokenStorage = new TokenStorage();
-        this.redisManager = RedisManager.getInstance();
         this.apiConfig = new ApiConfig();
+        // RedisManager will be initialized only when needed
+    }
+    
+    /**
+     * Get RedisManager instance only when needed (lazy initialization)
+     */
+    private RedisManager getRedisManager() {
+        if (redisManager == null) {
+            redisManager = RedisManager.getInstance();
+        }
+        return redisManager;
     }
     
     /**
@@ -77,6 +87,8 @@ public class AuthenticationManager {
     
     /**
      * Send OTP to email/phone
+     * This generates otp in user selected login channel, i.e, email or phone
+     * And stores the value in redis server. we need to extract it from there.
      */
     public Response sendOtp(String loginId, String clientId, String deviceId) {
         Long deviceTime = System.currentTimeMillis();
@@ -241,7 +253,7 @@ public class AuthenticationManager {
         
         // Try to get OTP from Redis
         try {
-            String otp = redisManager.getOtp(loginId);
+            String otp = getRedisManager().getOtp(loginId);
             if (otp != null && !otp.trim().isEmpty()) {
                 logger.info("Retrieved OTP from Redis for loginId: {}", loginId);
                 return otp;
@@ -271,7 +283,6 @@ public class AuthenticationManager {
                            otpResponse.getStatusCode(), otpResponse.asString());
                 return getOtp(loginId); // Fallback to Redis/mock
             }
-            
             // Step 2: Wait a moment for Redis to be updated (backend processing)
             Thread.sleep(1000);
             
@@ -280,10 +291,6 @@ public class AuthenticationManager {
             logger.info("Generated and retrieved OTP for loginId: {}", loginId);
             return otp;
             
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Thread interrupted while waiting for OTP generation", e);
-            return getOtp(loginId); // Fallback
         } catch (Exception e) {
             logger.error("Error in generateAndGetOtp for loginId: {}", loginId, e);
             return getOtp(loginId); // Fallback
@@ -295,7 +302,7 @@ public class AuthenticationManager {
      */
     public void cleanupOtpLimits(String loginId) {
         try {
-            redisManager.deleteOtpLimit(loginId);
+            getRedisManager().deleteOtpLimit(loginId);
             logger.debug("Cleaned up OTP limit keys for loginId: {}", loginId);
         } catch (Exception e) {
             logger.warn("Error cleaning up OTP limits for loginId: {}", loginId, e);
