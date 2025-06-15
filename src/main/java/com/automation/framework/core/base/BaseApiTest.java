@@ -47,40 +47,10 @@ import java.util.Map;
  * - Test lifecycle is properly managed
  */
 public abstract class BaseApiTest implements ApiTestInterface {
-
-    // ==================== CONSTANTS - HTTP HEADERS ====================
-    public static final String HEADER_CONTENT_TYPE = "Content-Type";
-    public static final String HEADER_ACCEPT = "Accept";
-    public static final String HEADER_ACCEPT_LANGUAGE = "Accept-Language";
-    public static final String HEADER_USER_AGENT = "User-Agent";
-    public static final String HEADER_TIMEZONE = "Timezone";
-    public static final String HEADER_API_KEY = "apikey";
-    public static final String HEADER_AUTHORIZATION = "Authorization";
-    public static final String HEADER_CLIENT_ID = "clientid";
-    public static final String HEADER_DEVICE_ID = "deviceid";
-    public static final String HEADER_WEBAPP_VERSION = "x-request-webappversion";
-    public static final String HEADER_SDK_VERSION = "psdkuiversion";
-    public static final String HEADER_IXI_SRC = "ixisrc";
     
     // ==================== CONSTANTS - DEFAULT VALUES ====================
-    public static final String CONTENT_TYPE_JSON = "application/json";
-    public static final String BEARER_PREFIX = "Bearer ";
-    public static final String DEFAULT_ACCEPT_LANGUAGE = "en-US,en;q=0.9";
-    public static final String DEFAULT_USER_AGENT = "ApiAutomationFramework/1.0";
     public static final String EMPTY_BODY = "";
-    
-    // ==================== CONSTANTS - CONFIGURATION KEYS ====================
-    public static final String PROP_API_ACCEPT = "api.accept";
-    public static final String PROP_API_ACCEPT_LANGUAGE = "api.accept.language";
-    public static final String PROP_API_USER_AGENT = "api.user.agent";
-    public static final String PROP_API_TIMEZONE = "api.timezone";
-    public static final String PROP_API_KEY = "api.key";
-    public static final String PROP_API_CLIENT_ID = "api.client.id";
-    public static final String PROP_API_DEVICE_ID = "api.device.id";
-    public static final String PROP_API_APP_VERSION = "api.app.version";
-    public static final String PROP_API_SDK_VERSION = "api.sdk.version";
-    public static final String PROP_API_IXI_SRC = "api.ixisrc";
-    public static final String PROP_API_AUTH_TOKEN = "api.auth.token";
+
     
     // ==================== CONSTANTS - TEST STATUS ====================
     public static final String STATUS_PASSED = "PASSED";
