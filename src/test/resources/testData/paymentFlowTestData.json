@@ -1,0 +1,47 @@
+{
+  "testPaymentFlow": {
+    "paymentFormRequest": {
+      "productTransactionId": "TRAIN_#{randomId}",
+      "productType": "TRAIN",
+      "userDetail": {
+        "email": "test@ixigo.com",
+        "firstName": "Test",
+        "lastName": "User",
+        "mobile": "9876543210",
+        "userId": "62fcb2cd739740545f7ca8ae"
+      },
+      "fareDetail": {
+        "paymentAmount": "1000.00",
+        "ixiMoneyBurnAmount": "0.00",
+        "ixiMoneyPremiumBurnAmount": "0.00",
+        "ixigoServiceCharge": "0.00",
+        "pgCharge": "10.00",
+        "bookingClass": "SL",
+        "allInclusiveFare": "1010.00"
+      },
+      "transactionDetail": {
+        "startTime": "2024-06-15T10:00:00.000Z",
+        "expiryTime": "2024-06-15T14:00:00.000Z",
+        "expiryActionUrl": "https://www.ixigo.com/trains/",
+        "expiryTitle": "Payment Timeout",
+        "expiryMessage": "Your time to make payment has expired"
+      },
+      "platform": "MWEB",
+      "clientId": "iximweb",
+      "productInfo": "Delhi to Mumbai Train Booking",
+      "version": 2
+    },
+    "expectedPaymentFormResponse": {
+      "gateway": "JUSPAY",
+      "paymentTransactionIdExists": true,
+      "txnidExists": true,
+      "amountGreaterThan": 0,
+      "fallbackUrlExists": true
+    },
+    "expectedTransactionResponse": {
+      "statusCode": 200,
+      "responseTimeMs": 5000,
+      "requiredFields": ["paymentTransactionId", "status", "amount"]
+    }
+  }
+}
