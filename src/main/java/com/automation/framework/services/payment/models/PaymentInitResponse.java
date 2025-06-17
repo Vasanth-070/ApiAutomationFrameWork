@@ -16,4 +16,8 @@ public class PaymentInitResponse {
     public PaymentData getData() {
         return data;
     }
+
+    public void setData(PaymentData data) {
+        this.data = data;
+    }
 }

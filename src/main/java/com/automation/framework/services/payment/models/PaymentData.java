@@ -9,12 +9,49 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentData {
+
+    @JsonProperty("status")
+    private String status;
     
+    @JsonProperty("message")
+    private String message;
+    
+    @JsonProperty("paymentTransactionId")
+    private String paymentTransactionId;
+
     @JsonProperty("upi")
     private UpiData upi;
     
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    
+    public String getMessage() {
+        return message;
+    }
+    
+    public void setMessage(String message) {
+        this.message = message;
+    }
+    
+    public String getPaymentTransactionId() {
+        return paymentTransactionId;
+    }
+    
+    public void setPaymentTransactionId(String paymentTransactionId) {
+        this.paymentTransactionId = paymentTransactionId;
+    }
+
     // Getters and Setters
     public UpiData getUpi() {
         return upi;
+    }
+
+    public void setUpi(UpiData upi) {
+        this.upi = upi;
     }
 }
