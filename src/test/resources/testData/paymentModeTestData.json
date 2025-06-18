@@ -1,0 +1,72 @@
+{
+  "paymentModeTests": {
+    "nbIcici": {
+      "bankCode": "NB_ICICI",
+      "paymentMode": "NET_BANKING",
+      "paymentProvider": "JUSPAY",
+      "transactionId": "#{paymentTransactionId}"
+    },
+    "noPayerVpa": {
+      "identifier": "UPI_COLLECT",
+      "paymentMode": "UPI",
+      "paymentProvider": "ICICID",
+      "transactionId": "#{paymentTransactionId}"
+    },
+    "v4InitOnlyPaymentGateway": {
+      "clientId": "12345",
+      "fareDetail": {
+        "allInclusiveFare": "1070.00",
+        "bookingClass": "AC",
+        "ixigoServiceCharge": "50.00",
+        "ixiMoneyBurnAmount": "0.00",
+        "ixiMoneyPremiumBurnAmount": "0.00",
+        "paymentAmount": "1000.00",
+        "pgCharge": "20.00"
+      },
+      "lineItems": [
+        {
+          "amount": "1000.00",
+          "description": "Flight fare",
+          "type": "FARE"
+        },
+        {
+          "amount": "50.00",
+          "description": "Service charge",
+          "type": "SERVICE_CHARGE"
+        },
+        {
+          "amount": "20.00",
+          "description": "Payment gateway fee",
+          "type": "PG_FEE"
+        }
+      ],
+      "platform": "ANDROID",
+      "productInfo": "Flight booking payment",
+      "productTransactionId": "#{transactionId}",
+      "productType": "FLIGHT",
+      "transactionDetail": {
+        "expiryActionUrl": "https://example.com/expired",
+        "expiryMessage": "Your payment session has expired",
+        "expiryTime": "2024-01-01T11:00:00Z",
+        "expiryTitle": "Payment Expired",
+        "startTime": "2024-01-01T10:00:00Z"
+      },
+      "userDetail": {
+        "email": "test@example.com",
+        "firstName": "Test",
+        "lastName": "User",
+        "mobile": "9876543210",
+        "userId": "testuser123"
+      },
+      "version": 4
+    },
+    "withPayerVpa": {
+      "payerVpa": "vasanthkzoomin@okhdfcbank",
+      "paymentMethod": "UPI_Collect",
+      "paymentReference": "{\"pgProvider\":\"JUSPAY\",\"paymentMode\":\"UPI\",\"identifier\":\"UPI_COLLECT\"}",
+      "paymentType": "UPI",
+      "txnId": "#{paymentTransactionId}",
+      "variant": ""
+    }
+  }
+}

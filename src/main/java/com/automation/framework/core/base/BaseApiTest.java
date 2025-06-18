@@ -295,7 +295,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
      * @param expectedStatusCodes - expected status codes
      * @return Response object
      */
-    private Response makeApiCall(HttpMethod method, String endpoint, Map<String, String> testSpecificHeaders, String body, boolean validateStatus, int... expectedStatusCodes) {
+    protected Response makeApiCall(HttpMethod method, String endpoint, Map<String, String> testSpecificHeaders, String body, boolean validateStatus, int... expectedStatusCodes) {
         // Build headers with session-based authentication
         Map<String, String> finalHeaders = headerManager.buildApiHeaders(apiConfig, testSpecificHeaders);
         testLogger.logApiRequest(method.getValue(), endpoint, body);

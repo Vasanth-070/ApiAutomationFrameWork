@@ -1,0 +1,49 @@
+{
+    "upiPaymentFlow": {
+      "upiId": "apoorvavarshney0@okicici",
+      "paymentTransactionId": "TXN_TEST_123456",
+      "bankName": "Axis Bank",
+      "accountNumber": "123456789012",
+      "ifscCode": "UTIB0000001",
+      "accountType": "SAVINGS",
+      "amount": "1000.00",
+      "currency": "INR",
+      "paymentMode": "UPI",
+      "orderId": "ORDER_TEST_123456",
+      "otp": "123456",
+      "userDetail": {
+        "firstName": "Test",
+        "lastName": "User",
+        "email": "varshneyapoorva16@gmail.com",
+        "mobile": "9870754545"
+      },
+      "expectedResponses": {
+        "upiValidation": {
+          "valid": true,
+          "message": "UPI ID is valid",
+          "bankName": "Axis Bank",
+          "accountType": "SAVINGS"
+        },
+        "paymentMode": {
+          "paymentMode": "UPI",
+          "status": "SUCCESS",
+          "message": "Payment mode selected successfully",
+          "transactionId": "TXN_TEST_123456"
+        },
+        "juspayTransaction": {
+          "status": "SUCCESS",
+          "message": "Transaction processed successfully",
+          "orderId": "ORDER_TEST_123456",
+          "transactionId": "TXN_TEST_123456",
+          "paymentMethod": "UPI",
+          "amount": "1000.00",
+          "currency": "INR"
+        },
+        "otpVerification": {
+          "status": "SUCCESS",
+          "message": "OTP verified successfully",
+          "transactionId": "TXN_TEST_123456"
+        }
+      }
+    }
+  }
