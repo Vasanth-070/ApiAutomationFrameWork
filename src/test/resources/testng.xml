@@ -8,8 +8,7 @@
     
     <test name="Payment Service Tests" preserve-order="true">
         <classes>
-            <class name="com.automation.tests.services.payment.PaymentPageApiTests"/>
-            <class name="com.automation.tests.services.payment.UpiValidationTests"/>
+            <class name="com.automation.tests.services.payment.PaymentMode"/>
         </classes>
     </test>
     
