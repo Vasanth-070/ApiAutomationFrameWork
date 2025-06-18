@@ -23,4 +23,9 @@ public interface DataProviderInterface {
      * Load test data from file
      */
     void loadTestData(String filePath);
+    
+    /**
+     * Load test data from multiple files
+     */
+    void loadTestData(String... filePaths);
 }

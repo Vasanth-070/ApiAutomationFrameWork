@@ -2,13 +2,16 @@ package com.automation.tests.services.payment;
 
 import com.automation.framework.core.base.BaseApiTest;
 import com.automation.framework.services.payment.endpoints.PaymentEndpoints;
+import com.automation.framework.services.payment.models.PaymentFormRequest;
+import com.automation.framework.services.payment.models.PaymentFormResponse;
+import com.automation.framework.services.payment.PaymentFormApiRequestGenerator;
+import com.automation.framework.services.payment.validators.PaymentFormValidator;
 import com.automation.framework.shared.utils.HttpMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import org.testng.annotations.Test;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Test class for Payment Mode API testing
@@ -22,12 +25,22 @@ public class PaymentMode extends BaseApiTest {
     private static final String TEST_DATA_PATH = "src/test/resources/testData/paymentModeTestData.json";
     private static final String TEST_DATA_KEY = "paymentModeTests";
     
+    // Payment Form Test Data Configuration
+    private static final String PAYMENT_FORM_TEST_DATA_PATH = "src/test/resources/testData/paymentFormTestData.json";
+    private static final String PAYMENT_FORM_TEST_DATA_KEY = "paymentFormApi";
+    private static final String TEST_DATA_NULL_MESSAGE = "Test data is null! Check if the test data file %s exists and key %s is loaded correctly.";
+
     
     // Test variables to store data between test steps
     private String flightPaymentTransactionId;
     private String flightProductTransactionId;
-    private String pgFee;
     
+    // Service instances
+    private PaymentFormApiRequestGenerator paymentFormRequestGenerator;
+    private PaymentFormValidator paymentFormValidator;
+    
+    // Validation messages
+    private static final String VALIDATION_FORM_STRUCTURE = "Payment Form Response Structure";
     @Override
     public String getTestSuiteName() {
         return TEST_SUITE_NAME;
@@ -46,8 +59,12 @@ public class PaymentMode extends BaseApiTest {
     @Override
     public void performTestSetup() {
         testLogger.logInfo("Setting up test data for Payment Mode API tests");
-        testDataProvider.loadTestData(TEST_DATA_PATH);
+        testDataProvider.loadTestData(TEST_DATA_PATH, PAYMENT_FORM_TEST_DATA_PATH);
         validateTestData();
+        
+        // Initialize service instances
+        paymentFormRequestGenerator = new PaymentFormApiRequestGenerator();
+        paymentFormValidator = new PaymentFormValidator();
     }
     
     @Override
@@ -65,48 +82,36 @@ public class PaymentMode extends BaseApiTest {
         executeTest("Payment Init with JUSPAY Provider", 
                    "Create new payment transaction for FLIGHT product with JUSPAY provider", () -> {
             
-            // Generate random booking ID for FLIGHT product
-            flightProductTransactionId = generateFlightProductTransactionId();
-            testLogger.logInfo("Generated flightProductTransactionId: " + flightProductTransactionId);
+            PaymentFormRequest request = paymentFormRequestGenerator.createPaymentFormRequest(
+                objectMapper.valueToTree(testDataProvider.getTestData(PAYMENT_FORM_TEST_DATA_KEY))
+                    .get("paymentFormRequest")
+            );
             
-            // Prepare request body
-            JsonNode testData = getTestData("v4InitOnlyPaymentGateway");
-            String requestBody = prepareV4InitRequestBody(testData, flightProductTransactionId);
+            // Make the API call in the test
+            Response postResponse = makeApiCall(
+                HttpMethod.POST,
+                PaymentEndpoints.PAYMENT_FORM,
+                objectMapper.writeValueAsString(request)
+            );
             
-            // Make API call to payment init endpoint
-            Response response = makeApiCall(HttpMethod.POST, PaymentEndpoints.PAYMENT_INIT_V4, requestBody);
-      
-            // Extract payment transaction ID from response
-            validateWithLogging("Extract Payment Transaction ID", () -> {
-                JsonNode responseJson = objectMapper.readTree(response.asString());
-                flightPaymentTransactionId = responseJson.path("data").path("paymentTransactionId").asText();
-                
-                if (flightPaymentTransactionId == null || flightPaymentTransactionId.isEmpty()) {
-                    throwAssertionError("Payment transaction ID not found in response");
-                }
-                
-                testLogger.logInfo("Extracted flightPaymentTransactionId: " + flightPaymentTransactionId);
-            });
-            
-            // Extract pgFee from line items
-            validateWithLogging("Extract PG Fee", () -> {
-                JsonNode requestJson = objectMapper.readTree(requestBody);
-                JsonNode lineItems = requestJson.path("lineItems");
-                
-                for (JsonNode item : lineItems) {
-                    if ("PG_FEE".equals(item.path("type").asText())) {
-                        pgFee = item.path("amount").asText();
-                        testLogger.logInfo("Extracted pgFee: " + pgFee);
-                        break;
-                    }
-                }
+            // Parse response to PaymentFormResponse object
+            PaymentFormResponse paymentResponse = objectMapper.readValue(
+                postResponse.asString(),
+                PaymentFormResponse.class
+            );
+
+            // Extract transaction ID and validate structure
+            validateWithLogging(VALIDATION_FORM_STRUCTURE, () -> {
+                paymentFormValidator.validatePaymentFormResponse(paymentResponse);
+                flightProductTransactionId = paymentResponse.getData().getPaymentTransactionId();
+                testLogger.logInfo("✓ Payment form response validation passed");
             });
             
             // Validate payment details (simulated DB check)
             validateWithLogging("Payment Details Validation", () -> {
                 // In real implementation, this would check database
                 // For now, we validate that we have the required transaction ID
-                if (flightPaymentTransactionId == null || flightPaymentTransactionId.trim().isEmpty()) {
+                if (flightProductTransactionId == null || flightProductTransactionId.trim().isEmpty()) {
                     throwAssertionError("Payment transaction ID is required for further tests");
                 }
                 testLogger.logInfo("✓ Payment created with JUSPAY provider, status: PENDING");
@@ -329,13 +334,6 @@ public class PaymentMode extends BaseApiTest {
         });
     }
     
-    // Helper Methods
-    
-    private String generateFlightProductTransactionId() {
-        String uniqueId = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
-        return "FLIGHT_" + uniqueId;
-    }
-    
     private JsonNode getTestData(String key) {
         Object testDataObj = testDataProvider.getTestData(TEST_DATA_KEY);
         if (testDataObj == null) {
@@ -352,15 +350,6 @@ public class PaymentMode extends BaseApiTest {
         return requestData;
     }
     
-    private String prepareV4InitRequestBody(JsonNode testData, String productTransactionId) throws Exception {
-        // Clone the test data and update with actual product transaction ID
-        JsonNode requestBody = testData.deepCopy();
-        ((com.fasterxml.jackson.databind.node.ObjectNode) requestBody)
-            .put("productTransactionId", productTransactionId);
-        
-        return objectMapper.writeValueAsString(requestBody);
-    }
-    
     private String prepareSetPaymentModeRequestBody(JsonNode testData, String transactionId) throws Exception {
         ((com.fasterxml.jackson.databind.node.ObjectNode) testData).put("txnId", transactionId);
         return objectMapper.writeValueAsString(testData);
@@ -369,9 +358,14 @@ public class PaymentMode extends BaseApiTest {
     private void validateTestData() {
         if (testDataProvider.getTestData(TEST_DATA_KEY) == null) {
             throw new IllegalStateException(
-                String.format("Test data is null! Check if the test data file %s exists and key %s is loaded correctly.",
-                            TEST_DATA_PATH, TEST_DATA_KEY)
+                String.format(TEST_DATA_NULL_MESSAGE, TEST_DATA_PATH, TEST_DATA_KEY)
             );
         }
+    }
+
+
+
+    protected void throwAssertionError(String message) {
+        throw new AssertionError(message);
     }
 }

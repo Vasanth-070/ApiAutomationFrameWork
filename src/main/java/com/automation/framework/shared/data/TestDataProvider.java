@@ -46,4 +46,18 @@ public class TestDataProvider implements DataProviderInterface {
             throw new RuntimeException("Failed to load test data from: " + filePath, e);
         }
     }
+    
+    /**
+     * Loads test data from multiple JSON files in a single call
+     * All data is merged into the same testData map
+     * 
+     * @param filePaths Variable number of file paths to load
+     * @throws RuntimeException if any file fails to load
+     */
+    @Override
+    public void loadTestData(String... filePaths) {
+        for (String filePath : filePaths) {
+            loadTestData(filePath);
+        }
+    }
 }

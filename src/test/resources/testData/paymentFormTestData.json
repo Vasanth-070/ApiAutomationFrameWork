@@ -1,0 +1,186 @@
+{
+  "paymentFormApi": {
+    "paymentFormRequest": {
+      "productTransactionId": "FLIGHT_#{transactionId}",
+      "productType": "FLIGHT",
+      "userDetail": {
+        "email": "testuser@ixigo.com",
+        "firstName": "Test",
+        "lastName": "User",
+        "mobile": "9876543210",
+        "userId": "62fcb2cd739740545f7ca8ae"
+      },
+      "fareDetail": {
+        "paymentAmount": "1500.00",
+        "ixiMoneyBurnAmount": "0.00",
+        "ixiMoneyPremiumBurnAmount": "0.00",
+        "ixigoServiceCharge": "15.00",
+        "pgCharge": "12.00",
+        "bookingClass": "SL",
+        "allInclusiveFare": "1527.00"
+      },
+      "transactionDetail": {
+        "startTime": "2024-06-18T10:00:00.000Z",
+        "expiryTime": "2024-06-18T14:00:00.000Z",
+        "expiryActionUrl": "https://www.ixigo.com/flights/",
+        "expiryTitle": "Payment Session Expired",
+        "expiryMessage": "Your payment session has expired. Please try again."
+      },
+      "platform": "MWEB",
+      "clientId": "iximweb",
+      "productInfo": "Delhi to Mumbai Flight Booking",
+      "version": 2
+    },
+    "expectedResponse": {
+      "statusCode": 200,
+      "responseTimeMs": 3000,
+      "gateway": "JUSPAY",
+      "requiredFields": [
+        "paymentTransactionId",
+        "gatewayData",
+        "gatewayData.form",
+        "gatewayData.form.txnid",
+        "gatewayData.form.amount"
+      ],
+      "validations": {
+        "paymentTransactionIdExists": true,
+        "txnidExists": true,
+        "amountGreaterThan": 0,
+        "fallbackUrlExists": true,
+        "gatewayDataExists": true
+      }
+    },
+    "alternateTestCases": {
+      "minimalRequest": {
+        "productTransactionId": "FLIGHT_MIN_#{transactionId}",
+        "productType": "FLIGHT",
+        "userDetail": {
+          "email": "minimal@test.com",
+          "firstName": "Min",
+          "lastName": "Test",
+          "mobile": "9000000001",
+          "userId": "minimal001"
+        },
+        "fareDetail": {
+          "paymentAmount": "100.00",
+          "ixiMoneyBurnAmount": "0.00",
+          "ixiMoneyPremiumBurnAmount": "0.00",
+          "ixigoServiceCharge": "0.00",
+          "pgCharge": "0.00",
+          "bookingClass": "SL",
+          "allInclusiveFare": "100.00"
+        },
+        "transactionDetail": {
+          "startTime": "2024-06-18T10:00:00.000Z",
+          "expiryTime": "2024-06-18T12:00:00.000Z",
+          "expiryActionUrl": "https://www.ixigo.com/",
+          "expiryTitle": "Timeout",
+          "expiryMessage": "Session expired"
+        },
+        "platform": "ANDROID",
+        "clientId": "iximatr",
+        "productInfo": "Minimal Flight Booking",
+        "version": 1
+      },
+      "maximalRequest": {
+        "productTransactionId": "FLIGHT_MAX_#{transactionId}",
+        "productType": "FLIGHT",
+        "userDetail": {
+          "email": "maximal.user@premium.ixigo.com",
+          "firstName": "Premium",
+          "lastName": "Customer",
+          "mobile": "9999999999",
+          "userId": "premium999"
+        },
+        "fareDetail": {
+          "paymentAmount": "50000.00",
+          "ixiMoneyBurnAmount": "500.00",
+          "ixiMoneyPremiumBurnAmount": "200.00",
+          "ixigoServiceCharge": "500.00",
+          "pgCharge": "250.00",
+          "bookingClass": "1A",
+          "allInclusiveFare": "50950.00"
+        },
+        "transactionDetail": {
+          "startTime": "2024-06-18T10:00:00.000Z",
+          "expiryTime": "2024-06-18T18:00:00.000Z",
+          "expiryActionUrl": "https://www.ixigo.com/flights/premium",
+          "expiryTitle": "Premium Payment Timeout",
+          "expiryMessage": "Your premium booking session has expired. Please contact customer support."
+        },
+        "platform": "WEB",
+        "clientId": "iximweb",
+        "productInfo": "Premium International Flight Booking - Delhi to New York",
+        "version": 2
+      }
+    },
+    "errorTestCases": {
+      "invalidEmail": {
+        "productTransactionId": "FLIGHT_ERR_#{transactionId}",
+        "productType": "FLIGHT",
+        "userDetail": {
+          "email": "invalid-email",
+          "firstName": "Error",
+          "lastName": "Test",
+          "mobile": "9876543210",
+          "userId": "error001"
+        },
+        "fareDetail": {
+          "paymentAmount": "1000.00",
+          "ixiMoneyBurnAmount": "0.00",
+          "ixiMoneyPremiumBurnAmount": "0.00",
+          "ixigoServiceCharge": "0.00",
+          "pgCharge": "10.00",
+          "bookingClass": "SL",
+          "allInclusiveFare": "1010.00"
+        },
+        "transactionDetail": {
+          "startTime": "2024-06-18T10:00:00.000Z",
+          "expiryTime": "2024-06-18T14:00:00.000Z",
+          "expiryActionUrl": "https://www.ixigo.com/",
+          "expiryTitle": "Error",
+          "expiryMessage": "Error case"
+        },
+        "platform": "MWEB",
+        "clientId": "iximweb",
+        "productInfo": "Error Test Booking",
+        "version": 2,
+        "expectedErrorCode": 400,
+        "expectedErrorMessage": "Invalid email format"
+      },
+      "negativeAmount": {
+        "productTransactionId": "FLIGHT_NEG_#{transactionId}",
+        "productType": "FLIGHT",
+        "userDetail": {
+          "email": "negative@test.com",
+          "firstName": "Negative",
+          "lastName": "Test",
+          "mobile": "9876543210",
+          "userId": "negative001"
+        },
+        "fareDetail": {
+          "paymentAmount": "-100.00",
+          "ixiMoneyBurnAmount": "0.00",
+          "ixiMoneyPremiumBurnAmount": "0.00",
+          "ixigoServiceCharge": "0.00",
+          "pgCharge": "0.00",
+          "bookingClass": "SL",
+          "allInclusiveFare": "-100.00"
+        },
+        "transactionDetail": {
+          "startTime": "2024-06-18T10:00:00.000Z",
+          "expiryTime": "2024-06-18T14:00:00.000Z",
+          "expiryActionUrl": "https://www.ixigo.com/",
+          "expiryTitle": "Error",
+          "expiryMessage": "Error case"
+        },
+        "platform": "MWEB",
+        "clientId": "iximweb",
+        "productInfo": "Negative Amount Test",
+        "version": 2,
+        "expectedErrorCode": 400,
+        "expectedErrorMessage": "Amount cannot be negative"
+      }
+    }
+  }
+}
