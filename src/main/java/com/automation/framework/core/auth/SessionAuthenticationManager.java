@@ -3,9 +3,13 @@ package com.automation.framework.core.auth;
 import com.automation.framework.core.config.ApiConfig;
 import com.automation.framework.core.interfaces.LoggingInterface;
 import com.automation.framework.core.logging.ApiLogger;
+import io.restassured.RestAssured;
+import io.restassured.specification.RequestSpecification;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Session-based Authentication Manager that ensures single token generation per session
@@ -20,6 +24,9 @@ public class SessionAuthenticationManager {
     
     // Session cache for authentication tokens
     private final ConcurrentHashMap<String, SessionAuthData> sessionCache = new ConcurrentHashMap<>();
+    
+    // REST Assured session-aware request specification for automatic cookie handling
+    private RequestSpecification sessionSpec;
     
     private final AuthenticationManager authManager;
     private final ApiConfig apiConfig;
@@ -37,7 +44,12 @@ public class SessionAuthenticationManager {
     private SessionAuthenticationManager() {
         this.apiConfig = new ApiConfig();
         String baseUrl = apiConfig.getBaseUrl();
-        this.authManager = new AuthenticationManager(baseUrl);
+        
+        // Initialize session-aware request specification with browser-like cookies
+        initializeSessionSpec();
+        
+        // Initialize authentication manager with sessionSpec via constructor
+        this.authManager = new AuthenticationManager(baseUrl, sessionSpec);
     }
     
     /**
@@ -205,6 +217,85 @@ public class SessionAuthenticationManager {
     public String forceReauthentication(String sessionKey) {
         clearSession(sessionKey);
         return generateAndCacheToken(sessionKey);
+    }
+    
+    /**
+     * Get the session-aware RequestSpecification for API calls
+     * This ensures all API calls share the same session and cookies
+     */
+    public RequestSpecification getSessionSpec() {
+        return sessionSpec;
+    }
+    
+    /**
+     * Initialize session specification with browser-like cookies
+     */
+    private void initializeSessionSpec() {
+        // Configure RestAssured with base URL
+        RestAssured.baseURI = apiConfig.getBaseUrl();
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        
+        // Initialize browser-like cookies
+        Map<String, String> browserCookies = createBrowserLikeCookies();
+        
+        // Initialize session specification with cookies
+        sessionSpec = RestAssured.given().cookies(browserCookies);
+        
+        logger.logDebug("SessionSpec initialized with " + browserCookies.size() + " browser-like cookies");
+    }
+    
+    /**
+     * Create cookies that would normally exist in a browser session
+     */
+    private Map<String, String> createBrowserLikeCookies() {
+        Map<String, String> browserCookies = new HashMap<>();
+        
+        try {
+            // Get client configuration
+            String clientId = apiConfig.getProperty("auth.user.clientid", "ixiweb");
+            String deviceId = getDeviceId();
+            
+            // Session and client identification cookies
+            browserCookies.put("session_id", generateSessionId());
+            browserCookies.put("clientId", clientId);
+            browserCookies.put("appVersion", "0");
+            
+            // Device and tracking cookies
+            if (deviceId != null) {
+                browserCookies.put("ixiUID", deviceId);
+            }
+            
+            // Source tracking (similar to what's sent as headers)
+            String ixiSrc = apiConfig.getProperty("api.ixisrc");
+            if (ixiSrc != null) {
+                browserCookies.put("ixiSrc", ixiSrc);
+            } else {
+                // Default ixiSrc value similar to headers
+                browserCookies.put("ixiSrc", "OlU2eQjHHVi4a5rBDGvGCoXqLv9yx+c2xLlH6/r+rwuoEiKF1yqyaNWvRaKNiuLqwrsBn/NXJAQEuWuH7v1JVOwX+yUlpzuP");
+            }
+            
+            // Locale and region cookies
+            browserCookies.put("ncr", "IN");
+            browserCookies.put("ixiUsrLocale", "urgn=Delhi:ucnc=IN:ucty=Delhi:uctz=Asia/Kolkata:cnc=IN:cc=INR:lng=en");
+            
+            // Analytics and tracking cookies (simulated)
+            browserCookies.put("_ga", "GA1.2.187673094." + System.currentTimeMillis());
+            browserCookies.put("_gid", "GA1.2.1284919466." + System.currentTimeMillis());
+            
+            logger.logDebug("Created " + browserCookies.size() + " browser-like cookies: " + browserCookies.keySet());
+            
+        } catch (Exception e) {
+            logger.logWarning("Failed to create browser-like cookies: " + e.getMessage());
+        }
+        
+        return browserCookies;
+    }
+    
+    /**
+     * Generate a session ID similar to browser behavior
+     */
+    private String generateSessionId() {
+        return "sy" + Long.toHexString(System.currentTimeMillis()).substring(6);
     }
     
     /**

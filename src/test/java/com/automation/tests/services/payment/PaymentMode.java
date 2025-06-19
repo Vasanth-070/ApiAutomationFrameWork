@@ -116,6 +116,7 @@ public class PaymentMode extends BaseApiTest {
                 }
                 testLogger.logInfo("✓ Payment created with JUSPAY provider, status: PENDING");
             });
+            flightPaymentTransactionId = paymentResponse.getData().getPaymentTransactionId();
         });
     }
     

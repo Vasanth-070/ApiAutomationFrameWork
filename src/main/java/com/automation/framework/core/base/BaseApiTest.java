@@ -16,6 +16,7 @@ import com.automation.framework.shared.utils.HttpMethod;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterClass;
 import java.util.Map;
@@ -89,6 +90,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
     protected SessionAuthenticationManager sessionAuthManager;
     protected HeaderManager headerManager;
     
+    
     // Test counters for dynamic reporting
     private int totalTests = 0;
     private int passedTests = 0;
@@ -144,6 +146,11 @@ public abstract class BaseApiTest implements ApiTestInterface {
         // Configure RestAssured with base URL from config
         RestAssured.baseURI = apiConfig.getBaseUrl();
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        
+        // SessionSpec is now managed by SessionAuthenticationManager (singleton)
+        // No need to initialize here as it's already initialized once
+        
+        testLogger.logDebug("REST Assured configured with automatic cookie/session management");
         
         // Initialize report with enforced test suite name
         reportManager.initializeReport(getTestSuiteName(), apiConfig.getEnvironment());
@@ -306,9 +313,12 @@ public abstract class BaseApiTest implements ApiTestInterface {
         testLogger.logInfo(MSG_REQUEST_HEADERS + finalHeaders.toString());
         
         Response response;
+        // Get sessionSpec from SessionAuthenticationManager
+        RequestSpecification sessionSpec = sessionAuthManager.getSessionSpec();
+        
         switch(method) {
             case GET:
-                response = RestAssured.given()
+                response = sessionSpec
                         .headers(finalHeaders)
                         .when()
                         .get(endpoint)
@@ -317,7 +327,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
                         .response();
                 break;
             case POST:
-                response = RestAssured.given()
+                response = sessionSpec
                         .headers(finalHeaders)
                         .body(body != null ? body : EMPTY_BODY)
                         .when()
@@ -327,7 +337,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
                         .response();
                 break;
             case PUT:
-                response = RestAssured.given()
+                response = sessionSpec
                         .headers(finalHeaders)
                         .body(body != null ? body : EMPTY_BODY)
                         .when()
@@ -337,7 +347,7 @@ public abstract class BaseApiTest implements ApiTestInterface {
                         .response();
                 break;
             case DELETE:
-                response = RestAssured.given()
+                response = sessionSpec
                         .headers(finalHeaders)
                         .when()
                         .delete(endpoint)
@@ -457,6 +467,10 @@ public abstract class BaseApiTest implements ApiTestInterface {
     protected final SessionAuthenticationManager.SessionAuthData getSessionAuthData() {
         return sessionAuthManager.getSessionData("default_session");
     }
+    
+    
+    
+    
     
     /**
      * Clear session authentication cache

@@ -28,6 +28,9 @@ public class AuthenticationManager {
     private final String baseUrl;
     private final HeaderManager headerManager;
     private final TokenStorage tokenStorage;
+    
+    // Session-aware request specification for automatic cookie handling
+    private RequestSpecification sessionSpec;
     private RedisManager redisManager; // Lazy initialization
     private final ApiConfig apiConfig;
     
@@ -38,6 +41,17 @@ public class AuthenticationManager {
         this.apiConfig = new ApiConfig();
         // RedisManager will be initialized only when needed
     }
+    
+    public AuthenticationManager(String baseUrl, RequestSpecification sessionSpec) {
+        this.baseUrl = baseUrl;
+        this.headerManager = new HeaderManager();
+        this.tokenStorage = new TokenStorage();
+        this.apiConfig = new ApiConfig();
+        this.sessionSpec = sessionSpec;
+        logger.logDebug("AuthenticationManager initialized with sessionSpec");
+        // RedisManager will be initialized only when needed
+    }
+    
     
     /**
      * Get RedisManager instance only when needed (lazy initialization)
@@ -64,14 +78,16 @@ public class AuthenticationManager {
             // Step 2: Login with OTP
             Response loginResponse = login(loginId, otp, clientId, deviceId);
             if (loginResponse.getStatusCode() == 200) {
-                String accessToken = loginResponse.jsonPath().getString("data.access_token");
-                String cookie = loginResponse.getCookie("sapphire");
+                String accessToken = loginResponse.jsonPath().getString("data.login.access_token");
                 
-                // Store token for future use
-                tokenStorage.storeToken(loginId, accessToken, cookie);
+                // Cookie is automatically handled by REST Assured sessionSpec
+                // No need to manually extract or store cookies for HTTP requests
+                logger.logInfo("Authentication successful for user: " + loginId + ". Cookies automatically managed by REST Assured.");
                 
-                logger.logInfo("Authentication successful for user: " + loginId);
-                return new AuthResponse(true, "Authentication successful", accessToken, cookie);
+                // Store only the access token (cookies are handled automatically)
+                tokenStorage.storeToken(loginId, accessToken, null);
+                
+                return new AuthResponse(true, "Authentication successful", accessToken, null);
             } else {
                 logger.logError("Login failed. Status: " + loginResponse.getStatusCode() + ", Response: " + loginResponse.asString(), null);
                 return new AuthResponse(false, "Login failed", null, null);
@@ -123,13 +139,26 @@ public class AuthenticationManager {
         
         logger.logDebug("Sending OTP to: " + loginId + " using endpoint: " + apiPath);
         
-        // Execute request
-        Response response = RestAssured.given()
-                .config(RestAssured.config().encoderConfig(
-                        EncoderConfig.encoderConfig().encodeContentTypeAs("x-www-form-urlencoded", ContentType.URLENC)))
-                .contentType("application/x-www-form-urlencoded")
-                .spec(requestSpec)
-                .post(apiPath);
+        // Execute request using sessionSpec for automatic cookie handling
+        Response response;
+        if (sessionSpec != null) {
+            response = sessionSpec
+                    .config(RestAssured.config().encoderConfig(
+                            EncoderConfig.encoderConfig().encodeContentTypeAs("x-www-form-urlencoded", ContentType.URLENC)))
+                    .contentType("application/x-www-form-urlencoded")
+                    .spec(requestSpec)
+                    .post(apiPath);
+            logger.logDebug("Send OTP request executed with sessionSpec for automatic cookie handling");
+        } else {
+            // Fallback to regular RestAssured if sessionSpec not available
+            response = RestAssured.given()
+                    .config(RestAssured.config().encoderConfig(
+                            EncoderConfig.encoderConfig().encodeContentTypeAs("x-www-form-urlencoded", ContentType.URLENC)))
+                    .contentType("application/x-www-form-urlencoded")
+                    .spec(requestSpec)
+                    .post(apiPath);
+            logger.logWarning("SessionSpec not available for sendOtp, using direct RestAssured call");
+        }
                 
         logger.logDebug("OTP response: " + response.asString());
         return response;
@@ -175,11 +204,22 @@ public class AuthenticationManager {
         
         logger.logDebug("Logging in user: " + loginId + " with endpoint: " + apiPath);
         
-        // Execute request
-        Response response = RestAssured.given()
-                .contentType("application/x-www-form-urlencoded")
-                .spec(requestSpec)
-                .post(apiPath);
+        // Execute request using sessionSpec for automatic cookie handling
+        Response response;
+        if (sessionSpec != null) {
+            response = sessionSpec
+                    .contentType("application/x-www-form-urlencoded")
+                    .spec(requestSpec)
+                    .post(apiPath);
+            logger.logDebug("Login request executed with sessionSpec for automatic cookie handling");
+        } else {
+            // Fallback to regular RestAssured if sessionSpec not available
+            response = RestAssured.given()
+                    .contentType("application/x-www-form-urlencoded")
+                    .spec(requestSpec)
+                    .post(apiPath);
+            logger.logWarning("SessionSpec not available, using direct RestAssured call");
+        }
                 
         logger.logDebug("Login response: " + response.asString());
         return response;
